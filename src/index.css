@@ -2,29 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @layer base {
   :root {
-    --background: 40 20% 98%;
-    --foreground: 222 47% 11%;
+    --background: 0 0% 98%;
+    --foreground: 220 13% 18%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 220 13% 18%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 220 13% 18%;
 
-    --primary: 234 89% 60%;
+    --primary: 210 100% 45%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 14% 96%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary-foreground: 220 13% 18%;
 
     --muted: 220 14% 96%;
     --muted-foreground: 220 9% 46%;
 
-    --accent: 173 58% 39%;
+    --accent: 262 52% 47%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
@@ -32,18 +32,24 @@
 
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 234 89% 60%;
+    --ring: 210 100% 45%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 234 89% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 96%;
-    --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 234 89% 60%;
+    /* NotebookLM Studio Panel - Light lilac */
+    --studio: 270 50% 97%;
+    --studio-foreground: 262 30% 30%;
+    --studio-card: 0 0% 100%;
+    --studio-border: 262 30% 88%;
+    --studio-accent: 262 52% 47%;
+
+    /* Tool colors */
+    --tool-flashcard: 262 52% 47%;
+    --tool-quiz: 142 70% 40%;
+    --tool-mindmap: 210 100% 50%;
+    --tool-audio: 25 95% 53%;
+    --tool-summary: 340 82% 52%;
+    --tool-slides: 48 96% 53%;
 
     /* Custom tokens */
     --surface-elevated: 0 0% 100%;
@@ -56,46 +62,52 @@
   }
 
   .dark {
-    --background: 222 47% 6%;
+    --background: 220 15% 8%;
     --foreground: 210 40% 98%;
 
-    --card: 222 47% 9%;
+    --card: 220 15% 11%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222 47% 9%;
+    --popover: 220 15% 11%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 234 89% 67%;
+    --primary: 210 100% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 217 33% 14%;
+    --secondary: 220 15% 15%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217 33% 14%;
+    --muted: 220 15% 15%;
     --muted-foreground: 215 20% 65%;
 
-    --accent: 173 58% 45%;
+    --accent: 262 52% 55%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 217 33% 18%;
-    --input: 217 33% 18%;
-    --ring: 234 89% 67%;
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --ring: 210 100% 55%;
 
-    --sidebar-background: 222 47% 8%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 234 89% 67%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 33% 14%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 18%;
-    --sidebar-ring: 234 89% 67%;
+    /* NotebookLM Studio Panel - Dark lilac */
+    --studio: 262 25% 12%;
+    --studio-foreground: 262 20% 85%;
+    --studio-card: 262 20% 16%;
+    --studio-border: 262 20% 25%;
+    --studio-accent: 262 52% 55%;
+
+    /* Tool colors dark */
+    --tool-flashcard: 262 52% 55%;
+    --tool-quiz: 142 70% 50%;
+    --tool-mindmap: 210 100% 55%;
+    --tool-audio: 25 95% 58%;
+    --tool-summary: 340 82% 58%;
+    --tool-slides: 48 96% 58%;
 
     /* Custom tokens dark */
-    --surface-elevated: 222 47% 11%;
-    --surface-overlay: 217 33% 14%;
+    --surface-elevated: 220 15% 13%;
+    --surface-overlay: 220 15% 15%;
     --text-secondary: 215 20% 65%;
     --text-tertiary: 215 20% 45%;
     --success: 142 70% 45%;
@@ -143,6 +155,30 @@
   .focus-ring {
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   }
+
+  /* NotebookLM-style studio panel */
+  .studio-panel {
+    @apply bg-studio border-l border-studio-border;
+  }
+
+  .studio-card {
+    @apply bg-studio-card border border-studio-border rounded-xl shadow-soft;
+  }
+
+  /* Browser-style tabs */
+  .browser-tab {
+    @apply relative px-4 py-2 text-sm font-medium rounded-t-lg border border-b-0 border-transparent
+           hover:bg-secondary/50 transition-colors cursor-pointer;
+  }
+
+  .browser-tab.active {
+    @apply bg-card border-border text-foreground;
+  }
+
+  .browser-tab.active::after {
+    content: '';
+    @apply absolute bottom-0 left-0 right-0 h-[2px] bg-card;
+  }
 }
 
 @layer utilities {
@@ -176,6 +212,15 @@
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--muted-foreground));
   }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Animation keyframes */
@@ -198,6 +243,17 @@
   to {
     opacity: 1;
     transform: translateX(0);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -225,6 +281,10 @@
 
 .animate-slide-in-right {
   animation: slide-in-right 0.3s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out forwards;
 }
 
 .animate-pulse-soft {
