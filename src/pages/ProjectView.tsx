@@ -9,6 +9,7 @@ import { GeneratedItem } from "@/components/project/StudioListItem";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/useTheme";
+import { motion } from "framer-motion";
 
 // Mock data
 const mockSources: Source[] = [
@@ -90,20 +91,28 @@ export default function ProjectView() {
         <div className="flex items-center justify-between px-4 h-14">
           <div className="flex items-center gap-3">
             <Link to="/dashboard">
-              <Button variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-foreground">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-foreground">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </motion.div>
             </Link>
             <h1 className="font-semibold text-foreground truncate">{mockProject.title}</h1>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setTheme(isDark ? "light" : "dark")}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </Button>
+          <div className="flex items-center gap-2">
+            {/* Chat label moved to top-right */}
+            <span className="text-sm text-muted-foreground hidden sm:inline">Chat</span>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setTheme(isDark ? "light" : "dark")}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </Button>
+            </motion.div>
+          </div>
         </div>
       </header>
 
@@ -127,7 +136,11 @@ export default function ProjectView() {
                 {/* Messages */}
                 <ScrollArea className="flex-1 p-4">
                   {messages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
+                    <motion.div
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex flex-col items-center justify-center min-h-[50vh] text-center px-4"
+                    >
                       <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-4">
                         <StickyNote className="h-8 w-8 text-primary" />
                       </div>
@@ -137,7 +150,7 @@ export default function ProjectView() {
                       <p className="text-muted-foreground max-w-md">
                         Ask questions about your sources or use the suggestions below to get started.
                       </p>
-                    </div>
+                    </motion.div>
                   ) : (
                     <div className="space-y-4 max-w-3xl mx-auto">
                       {messages.map((message) => (
@@ -167,12 +180,15 @@ export default function ProjectView() {
           </div>
 
           {/* Add Note FAB */}
-          <Button
-            size="icon"
-            className="hidden sm:flex fixed bottom-6 right-6 lg:right-[calc(theme(spacing.96)+1.5rem)] xl:right-[calc(theme(spacing.96)+1.5rem)] h-12 w-12 rounded-full shadow-elevated z-40"
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="hidden sm:block fixed bottom-6 right-6 lg:right-[calc(theme(spacing.96)+1.5rem)] z-40"
           >
-            <Plus className="h-5 w-5" />
-          </Button>
+            <Button size="icon" className="h-12 w-12 rounded-full shadow-elevated">
+              <Plus className="h-5 w-5" />
+            </Button>
+          </motion.div>
         </div>
 
         {/* Studio Panel (Desktop) */}

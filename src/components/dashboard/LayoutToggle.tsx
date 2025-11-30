@@ -1,6 +1,5 @@
 import { LayoutGrid, List } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 interface LayoutToggleProps {
   layout: "grid" | "list";
@@ -9,29 +8,26 @@ interface LayoutToggleProps {
 
 export function LayoutToggle({ layout, onLayoutChange }: LayoutToggleProps) {
   return (
-    <div className="flex items-center bg-secondary/50 rounded-lg p-1">
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        onClick={() => onLayoutChange("grid")}
-        className={cn(
-          "h-8 w-8 rounded-md transition-colors",
-          layout === "grid" && "bg-card shadow-soft text-foreground"
-        )}
+    <ToggleGroup 
+      type="single" 
+      value={layout} 
+      onValueChange={(value) => value && onLayoutChange(value as "grid" | "list")}
+      className="bg-secondary/50 rounded-lg p-1"
+    >
+      <ToggleGroupItem 
+        value="grid" 
+        aria-label="Grid view"
+        className="data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md h-8 w-8"
       >
         <LayoutGrid className="h-4 w-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        onClick={() => onLayoutChange("list")}
-        className={cn(
-          "h-8 w-8 rounded-md transition-colors",
-          layout === "list" && "bg-card shadow-soft text-foreground"
-        )}
+      </ToggleGroupItem>
+      <ToggleGroupItem 
+        value="list" 
+        aria-label="List view"
+        className="data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md h-8 w-8"
       >
         <List className="h-4 w-4" />
-      </Button>
-    </div>
+      </ToggleGroupItem>
+    </ToggleGroup>
   );
 }

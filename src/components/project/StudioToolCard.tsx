@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Pencil, Layers, HelpCircle, Brain, Headphones, FileText, Presentation, LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 
 export type ToolType = "flashcards" | "quiz" | "mindmap" | "audio" | "summary" | "slides";
 
@@ -80,7 +81,12 @@ export function StudioToolCard({ type, projectId, generatedCount, onEdit }: Stud
 
   return (
     <Link to={getLink()}>
-      <div className="group relative bg-studio-card border border-studio-border rounded-xl p-4 hover:shadow-soft transition-all cursor-pointer">
+      <motion.div
+        whileHover={{ scale: 1.02, y: -2 }}
+        whileTap={{ scale: 0.98 }}
+        transition={{ type: "spring", stiffness: 400, damping: 17 }}
+        className="group relative bg-studio-card border border-studio-border rounded-xl p-4 hover:shadow-soft transition-shadow cursor-pointer"
+      >
         {/* Edit button */}
         {onEdit && (
           <Button
@@ -113,7 +119,7 @@ export function StudioToolCard({ type, projectId, generatedCount, onEdit }: Stud
             </span>
           </div>
         )}
-      </div>
+      </motion.div>
     </Link>
   );
 }

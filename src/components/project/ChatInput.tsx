@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Send, Sparkles } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -18,6 +19,7 @@ const suggestions = [
 
 export function ChatInput({ onSend, disabled, placeholder = "Ask anything about your sources..." }: ChatInputProps) {
   const [input, setInput] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,41 +37,62 @@ export function ChatInput({ onSend, disabled, placeholder = "Ask anything about 
   };
 
   return (
-    <div className="border-t border-border bg-card/50 p-4 space-y-3">
+    <div className="border-t border-border bg-background/60 backdrop-blur-xl p-4 space-y-3">
       {/* Suggestions */}
       <div className="flex flex-wrap gap-2">
         {suggestions.map((suggestion) => (
-          <button
+          <motion.button
             key={suggestion.label}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => onSend(suggestion.prompt)}
             disabled={disabled}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-full bg-secondary hover:bg-secondary/80 text-foreground transition-colors disabled:opacity-50"
           >
             <span>{suggestion.icon}</span>
             <span>{suggestion.label}</span>
-          </button>
+          </motion.button>
         ))}
       </div>
 
-      {/* Input */}
+      {/* Input with arrow inside */}
       <form onSubmit={handleSubmit} className="relative">
-        <Textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          disabled={disabled}
-          rows={1}
-          className="min-h-[48px] max-h-[200px] resize-none pr-12 rounded-2xl bg-secondary/50 border-border/50 focus:border-primary/50 focus:bg-card transition-colors"
-        />
-        <Button
-          type="submit"
-          size="icon"
-          disabled={!input.trim() || disabled}
-          className="absolute right-2 bottom-2 h-8 w-8 rounded-xl"
+        <div 
+          className={cn(
+            "relative flex items-center rounded-2xl bg-secondary/50 border transition-all duration-200",
+            isFocused ? "border-primary/50 bg-card shadow-sm" : "border-border/50"
+          )}
         >
-          <Send className="h-4 w-4" />
-        </Button>
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            placeholder={placeholder}
+            disabled={disabled}
+            className="flex-1 bg-transparent px-4 py-3 text-sm outline-none placeholder:text-muted-foreground disabled:opacity-50"
+          />
+          <motion.div
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            className="pr-2"
+          >
+            <Button
+              type="submit"
+              size="icon"
+              disabled={!input.trim() || disabled}
+              className={cn(
+                "h-8 w-8 rounded-xl transition-all",
+                input.trim() 
+                  ? "bg-primary text-primary-foreground" 
+                  : "bg-secondary text-muted-foreground"
+              )}
+            >
+              <ArrowUp className="h-4 w-4" />
+            </Button>
+          </motion.div>
+        </div>
       </form>
     </div>
   );

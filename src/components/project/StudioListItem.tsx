@@ -6,6 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { motion } from "framer-motion";
 
 export interface GeneratedItem {
   id: string;
@@ -32,7 +33,13 @@ export function StudioListItem({ item, onDelete, onDuplicate, onExport }: Studio
   const Icon = typeIcons[item.type];
 
   return (
-    <div className="group flex items-center gap-3 p-3 rounded-lg hover:bg-studio-card/50 transition-colors">
+    <motion.div
+      initial={{ opacity: 0, x: -8 }}
+      animate={{ opacity: 1, x: 0 }}
+      whileHover={{ x: 2 }}
+      transition={{ duration: 0.2 }}
+      className="group flex items-center gap-3 p-3 rounded-lg hover:bg-studio-card/50 transition-colors"
+    >
       <div className="h-8 w-8 rounded-lg bg-studio-card border border-studio-border flex items-center justify-center flex-shrink-0">
         <Icon className="h-4 w-4 text-studio-accent" />
       </div>
@@ -76,6 +83,6 @@ export function StudioListItem({ item, onDelete, onDuplicate, onExport }: Studio
           )}
         </DropdownMenuContent>
       </DropdownMenu>
-    </div>
+    </motion.div>
   );
 }
