@@ -116,7 +116,7 @@ export default function ProjectView() {
           </div>
           <div className="flex items-center gap-2">
             {/* Chat label moved to top-right */}
-            <span className="text-sm text-muted-foreground hidden sm:inline">Chat</span>
+            
             <motion.div whileHover={{
             scale: 1.05
           }} whileTap={{
