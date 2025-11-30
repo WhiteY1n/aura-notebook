@@ -2,41 +2,58 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 220 13% 18%;
+    /* Core Background */
+    --background: 0 0% 100%;
+    --background-secondary: 0 0% 98%;
+    --foreground: 0 0% 12%;
 
+    /* Card */
     --card: 0 0% 100%;
-    --card-foreground: 220 13% 18%;
+    --card-foreground: 0 0% 12%;
 
+    /* Popover */
     --popover: 0 0% 100%;
-    --popover-foreground: 220 13% 18%;
+    --popover-foreground: 0 0% 12%;
 
-    --primary: 210 100% 45%;
+    /* Primary - Accent Blue */
+    --primary: 221 85% 54%;
     --primary-foreground: 0 0% 100%;
+    --primary-hover: 221 85% 45%;
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 13% 18%;
+    /* Secondary */
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 12%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
+    /* Muted */
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 40%;
 
+    /* Accent - Purple */
     --accent: 262 52% 47%;
     --accent-foreground: 0 0% 100%;
 
+    /* Destructive */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 210 100% 45%;
+    /* Border & Input */
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 221 85% 54%;
 
-    --radius: 0.75rem;
+    /* Radius tokens */
+    --radius: 0.625rem;
+    --radius-sm: 0.375rem;
+    --radius-md: 0.625rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
+    --radius-2xl: 2rem;
 
-    /* NotebookLM Studio Panel - Light lilac */
+    /* Studio Panel - Light lilac */
     --studio: 270 50% 97%;
     --studio-foreground: 262 30% 30%;
     --studio-card: 0 0% 100%;
@@ -53,44 +70,55 @@
 
     /* Custom tokens */
     --surface-elevated: 0 0% 100%;
-    --surface-overlay: 220 14% 96%;
-    --text-secondary: 220 9% 46%;
-    --text-tertiary: 220 9% 66%;
+    --surface-overlay: 0 0% 96%;
+    --text-secondary: 0 0% 40%;
+    --text-tertiary: 0 0% 60%;
     --success: 142 76% 36%;
     --warning: 38 92% 50%;
     --info: 199 89% 48%;
   }
 
   .dark {
+    /* Core Background */
     --background: 220 15% 8%;
-    --foreground: 210 40% 98%;
+    --background-secondary: 220 15% 10%;
+    --foreground: 0 0% 95%;
 
+    /* Card */
     --card: 220 15% 11%;
-    --card-foreground: 210 40% 98%;
+    --card-foreground: 0 0% 95%;
 
+    /* Popover */
     --popover: 220 15% 11%;
-    --popover-foreground: 210 40% 98%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 210 100% 55%;
+    /* Primary */
+    --primary: 221 85% 60%;
     --primary-foreground: 0 0% 100%;
+    --primary-hover: 221 85% 55%;
 
+    /* Secondary */
     --secondary: 220 15% 15%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary-foreground: 0 0% 95%;
 
+    /* Muted */
     --muted: 220 15% 15%;
-    --muted-foreground: 215 20% 65%;
+    --muted-foreground: 0 0% 60%;
 
+    /* Accent */
     --accent: 262 52% 55%;
     --accent-foreground: 0 0% 100%;
 
+    /* Destructive */
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
 
+    /* Border */
     --border: 220 15% 20%;
     --input: 220 15% 20%;
-    --ring: 210 100% 55%;
+    --ring: 221 85% 60%;
 
-    /* NotebookLM Studio Panel - Dark lilac */
+    /* Studio Panel - Dark lilac */
     --studio: 262 25% 12%;
     --studio-foreground: 262 20% 85%;
     --studio-card: 262 20% 16%;
@@ -108,8 +136,8 @@
     /* Custom tokens dark */
     --surface-elevated: 220 15% 13%;
     --surface-overlay: 220 15% 15%;
-    --text-secondary: 215 20% 65%;
-    --text-tertiary: 215 20% 45%;
+    --text-secondary: 0 0% 60%;
+    --text-tertiary: 0 0% 45%;
     --success: 142 70% 45%;
     --warning: 38 92% 55%;
     --info: 199 89% 55%;

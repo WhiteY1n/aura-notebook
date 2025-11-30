@@ -1,10 +1,12 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { Plus } from "lucide-react";
 import { TopNav } from "@/components/dashboard/TopNav";
 import { SearchBar } from "@/components/dashboard/SearchBar";
 import { LayoutToggle } from "@/components/dashboard/LayoutToggle";
 import { ProjectCard, Project } from "@/components/dashboard/ProjectCard";
 import { EmptyState } from "@/components/dashboard/EmptyState";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -13,8 +15,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { FadeIn } from "@/components/animations";
 
 // Mock data
 const mockProjects: Project[] = [
@@ -69,22 +71,30 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <TopNav onCreateProject={() => setCreateDialogOpen(true)} />
+      <TopNav />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {isEmpty ? (
           <EmptyState onCreateProject={() => setCreateDialogOpen(true)} />
         ) : (
           <div className="space-y-6">
-            {/* Controls */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            {/* Search Bar - Full width */}
+            <FadeIn>
               <SearchBar
                 value={searchQuery}
                 onChange={setSearchQuery}
-                className="w-full sm:w-80"
+                className="w-full"
               />
+            </FadeIn>
+
+            {/* Create button + Layout toggle */}
+            <FadeIn delay={0.1} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Create new
+              </Button>
               <LayoutToggle layout={layout} onLayoutChange={setLayout} />
-            </div>
+            </FadeIn>
 
             {/* Projects Grid/List */}
             {filteredProjects.length === 0 ? (
@@ -96,35 +106,27 @@ export default function Dashboard() {
             ) : layout === "grid" ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {filteredProjects.map((project, index) => (
-                  <div
-                    key={project.id}
-                    className="animate-fade-in"
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
+                  <FadeIn key={project.id} delay={index * 0.05}>
                     <ProjectCard
                       project={project}
                       layout="grid"
                       onRename={handleRename}
                       onDelete={handleDelete}
                     />
-                  </div>
+                  </FadeIn>
                 ))}
               </div>
             ) : (
               <div className="space-y-2">
                 {filteredProjects.map((project, index) => (
-                  <div
-                    key={project.id}
-                    className="animate-fade-in"
-                    style={{ animationDelay: `${index * 30}ms` }}
-                  >
+                  <FadeIn key={project.id} delay={index * 0.03}>
                     <ProjectCard
                       project={project}
                       layout="list"
                       onRename={handleRename}
                       onDelete={handleDelete}
                     />
-                  </div>
+                  </FadeIn>
                 ))}
               </div>
             )}

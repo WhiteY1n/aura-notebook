@@ -1,5 +1,4 @@
-import { Moon, Sun, Sparkles, Settings, HelpCircle, MessageSquare, LogOut } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Moon, Sun, Settings, HelpCircle, MessageSquare, LogOut, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -11,18 +10,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "@/hooks/useTheme";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
-interface TopNavProps {
+interface HeaderProps {
+  showCreateButton?: boolean;
   onCreateProject?: () => void;
 }
 
-export function TopNav({ onCreateProject }: TopNavProps) {
+export function Header({ showCreateButton = false, onCreateProject }: HeaderProps) {
   const { setTheme, isDark } = useTheme();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-xl">
-      <div className="flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div className="flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link to="/dashboard" className="flex items-center gap-2">
           <motion.div
@@ -39,6 +40,13 @@ export function TopNav({ onCreateProject }: TopNavProps) {
 
         {/* Right side */}
         <div className="flex items-center gap-2">
+          {/* Create button */}
+          {showCreateButton && onCreateProject && (
+            <Button onClick={onCreateProject} size="sm" className="hidden sm:flex">
+              Create new
+            </Button>
+          )}
+
           {/* Theme toggle */}
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button
