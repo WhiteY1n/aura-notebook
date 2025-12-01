@@ -12,21 +12,21 @@ export function LayoutToggle({ layout, onLayoutChange }: LayoutToggleProps) {
       type="single" 
       value={layout} 
       onValueChange={(value) => value && onLayoutChange(value as "grid" | "list")}
-      className="bg-secondary/50 rounded-lg p-1"
+      className="bg-muted border border-border rounded-lg p-1"
     >
       <ToggleGroupItem 
         value="grid" 
         aria-label="Grid view"
-        className="data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md h-8 w-8"
+        className="data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm data-[state=off]:text-muted-foreground rounded-md h-9 w-9"
       >
-        <LayoutGrid className="h-4 w-4" />
+        <LayoutGrid className="h-5 w-5" />
       </ToggleGroupItem>
       <ToggleGroupItem 
         value="list" 
         aria-label="List view"
-        className="data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md h-8 w-8"
+        className="data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm data-[state=off]:text-muted-foreground rounded-md h-9 w-9"
       >
-        <List className="h-4 w-4" />
+        <List className="h-5 w-5" />
       </ToggleGroupItem>
     </ToggleGroup>
   );
