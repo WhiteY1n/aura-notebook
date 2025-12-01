@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { TopNav } from "@/components/dashboard/TopNav";
 import { SearchBar } from "@/components/dashboard/SearchBar";
 import { LayoutToggle } from "@/components/dashboard/LayoutToggle";
+import { SortDropdown, SortOption } from "@/components/dashboard/SortDropdown";
 import { ProjectCard, Project } from "@/components/dashboard/ProjectCard";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { Button } from "@/components/ui/button";
@@ -18,37 +19,58 @@ import {
 import { Input } from "@/components/ui/input";
 import { FadeIn } from "@/components/animations";
 
-// Mock data
-const mockProjects: Project[] = [
-  { id: "1", title: "Introduction to Machine Learning", lastUpdated: "2 hours ago", sourcesCount: 5 },
-  { id: "2", title: "React Best Practices", lastUpdated: "Yesterday", sourcesCount: 3 },
-  { id: "3", title: "Quantum Computing Lecture Notes", lastUpdated: "3 days ago", sourcesCount: 8 },
-  { id: "4", title: "Data Structures and Algorithms", lastUpdated: "1 week ago", sourcesCount: 12 },
-  { id: "5", title: "Neural Networks Deep Dive", lastUpdated: "2 weeks ago", sourcesCount: 6 },
-  { id: "6", title: "Research Paper: AI Ethics", lastUpdated: "1 month ago", sourcesCount: 4 },
+// Mock data with createdAt for sorting
+const mockProjects: (Project & { createdAt: Date })[] = [
+  { id: "1", title: "Introduction to Machine Learning", lastUpdated: "2 hours ago", sourcesCount: 5, createdAt: new Date("2024-01-15") },
+  { id: "2", title: "React Best Practices", lastUpdated: "Yesterday", sourcesCount: 3, createdAt: new Date("2024-01-10") },
+  { id: "3", title: "Quantum Computing Lecture Notes", lastUpdated: "3 days ago", sourcesCount: 8, createdAt: new Date("2024-01-12") },
+  { id: "4", title: "Data Structures and Algorithms", lastUpdated: "1 week ago", sourcesCount: 12, createdAt: new Date("2024-01-05") },
+  { id: "5", title: "Neural Networks Deep Dive", lastUpdated: "2 weeks ago", sourcesCount: 6, createdAt: new Date("2024-01-08") },
+  { id: "6", title: "Research Paper: AI Ethics", lastUpdated: "1 month ago", sourcesCount: 4, createdAt: new Date("2023-12-20") },
 ];
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [projects, setProjects] = useState<Project[]>(mockProjects);
+  const [projects, setProjects] = useState<(Project & { createdAt: Date })[]>(mockProjects);
   const [searchQuery, setSearchQuery] = useState("");
   const [layout, setLayout] = useState<"grid" | "list">("grid");
+  const [sortOption, setSortOption] = useState<SortOption>("date-newest");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newProjectTitle, setNewProjectTitle] = useState("");
 
-  const filteredProjects = useMemo(() => {
-    return projects.filter((project) =>
+  const filteredAndSortedProjects = useMemo(() => {
+    // Filter first
+    let result = projects.filter((project) =>
       project.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [projects, searchQuery]);
+
+    // Then sort
+    switch (sortOption) {
+      case "date-newest":
+        result = [...result].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        break;
+      case "date-oldest":
+        result = [...result].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+        break;
+      case "name-asc":
+        result = [...result].sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case "name-desc":
+        result = [...result].sort((a, b) => b.title.localeCompare(a.title));
+        break;
+    }
+
+    return result;
+  }, [projects, searchQuery, sortOption]);
 
   const handleCreateProject = () => {
     if (newProjectTitle.trim()) {
-      const newProject: Project = {
+      const newProject: Project & { createdAt: Date } = {
         id: Date.now().toString(),
         title: newProjectTitle.trim(),
         lastUpdated: "Just now",
         sourcesCount: 0,
+        createdAt: new Date(),
       };
       setProjects([newProject, ...projects]);
       setNewProjectTitle("");
@@ -87,17 +109,21 @@ export default function Dashboard() {
               />
             </FadeIn>
 
-            {/* Create button + Layout toggle */}
+            {/* Create button + Sort + Layout toggle */}
             <FadeIn delay={0.1} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
                 <Plus className="h-4 w-4" />
                 Create new
               </Button>
-              <LayoutToggle layout={layout} onLayoutChange={setLayout} />
+              
+              <div className="flex items-center gap-3">
+                <SortDropdown value={sortOption} onValueChange={setSortOption} />
+                <LayoutToggle layout={layout} onLayoutChange={setLayout} />
+              </div>
             </FadeIn>
 
             {/* Projects Grid/List */}
-            {filteredProjects.length === 0 ? (
+            {filteredAndSortedProjects.length === 0 ? (
               <div className="text-center py-16">
                 <p className="text-muted-foreground">
                   No notebooks found matching "{searchQuery}"
@@ -105,7 +131,7 @@ export default function Dashboard() {
               </div>
             ) : layout === "grid" ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {filteredProjects.map((project, index) => (
+                {filteredAndSortedProjects.map((project, index) => (
                   <FadeIn key={project.id} delay={index * 0.05}>
                     <ProjectCard
                       project={project}
@@ -118,7 +144,7 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="space-y-2">
-                {filteredProjects.map((project, index) => (
+                {filteredAndSortedProjects.map((project, index) => (
                   <FadeIn key={project.id} delay={index * 0.03}>
                     <ProjectCard
                       project={project}
