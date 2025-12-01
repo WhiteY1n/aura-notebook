@@ -91,26 +91,27 @@ export default function Dashboard() {
           <EmptyState onCreateProject={() => setCreateDialogOpen(true)} />
         ) : (
           <div className="space-y-6">
-            {/* Search Bar - Full width */}
+            {/* Search + Sort + Layout toggle row */}
             <FadeIn>
-              <SearchBar
-                value={searchQuery}
-                onChange={setSearchQuery}
-                className="w-full"
-              />
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+                  <SearchBar
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    className="flex-1 min-w-0"
+                  />
+                  <SortDropdown value={sortOption} onValueChange={setSortOption} />
+                </div>
+                <LayoutToggle layout={layout} onLayoutChange={setLayout} />
+              </div>
             </FadeIn>
 
-            {/* Create button + Sort + Layout toggle */}
-            <FadeIn delay={0.1} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            {/* Create button */}
+            <FadeIn delay={0.1}>
               <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
                 <Plus className="h-4 w-4" />
                 Create new
               </Button>
-              
-              <div className="flex items-center gap-3">
-                <SortDropdown value={sortOption} onValueChange={setSortOption} />
-                <LayoutToggle layout={layout} onLayoutChange={setLayout} />
-              </div>
             </FadeIn>
 
             {/* Projects Grid/List */}
