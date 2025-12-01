@@ -34,7 +34,7 @@ export default function Dashboard() {
   const [projects, setProjects] = useState<(Project & { createdAt: Date })[]>(mockProjects);
   const [searchQuery, setSearchQuery] = useState("");
   const [layout, setLayout] = useState<"grid" | "list">("grid");
-  const [sortOption, setSortOption] = useState<SortOption>("date-newest");
+  const [sortOption, setSortOption] = useState<SortOption>("date");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newProjectTitle, setNewProjectTitle] = useState("");
 
@@ -45,19 +45,10 @@ export default function Dashboard() {
     );
 
     // Then sort
-    switch (sortOption) {
-      case "date-newest":
-        result = [...result].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-        break;
-      case "date-oldest":
-        result = [...result].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-        break;
-      case "name-asc":
-        result = [...result].sort((a, b) => a.title.localeCompare(b.title));
-        break;
-      case "name-desc":
-        result = [...result].sort((a, b) => b.title.localeCompare(a.title));
-        break;
+    if (sortOption === "date") {
+      result = [...result].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    } else {
+      result = [...result].sort((a, b) => a.title.localeCompare(b.title));
     }
 
     return result;

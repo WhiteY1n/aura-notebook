@@ -8,11 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export type SortOption = 
-  | "date-newest"
-  | "date-oldest"
-  | "name-asc"
-  | "name-desc";
+export type SortOption = "date" | "title";
 
 interface SortDropdownProps {
   value: SortOption;
@@ -20,10 +16,8 @@ interface SortDropdownProps {
 }
 
 const sortOptions: { value: SortOption; label: string }[] = [
-  { value: "date-newest", label: "Date created (newest)" },
-  { value: "date-oldest", label: "Date created (oldest)" },
-  { value: "name-asc", label: "Name A → Z" },
-  { value: "name-desc", label: "Name Z → A" },
+  { value: "date", label: "Date" },
+  { value: "title", label: "Title" },
 ];
 
 export function SortDropdown({ value, onValueChange }: SortDropdownProps) {
