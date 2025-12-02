@@ -31,17 +31,17 @@ export function ChatPanel({
   disabled = false,
 }: ChatPanelProps) {
   return (
-    <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
+    <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden border-l border-border/60 dark:border-border/40 shadow-inner">
       {/* Header */}
-      <div className="flex items-center justify-end px-8 py-4 border-b border-border/50">
+      <div className="flex items-center justify-end px-6 py-4 border-b border-border/50">
         <div className="flex items-center gap-2 text-muted-foreground">
           <MessageSquare className="h-4 w-4" />
           <span className="text-sm font-medium">Chat</span>
         </div>
       </div>
 
-      {/* Messages Area */}
-      <ScrollArea className="flex-1 px-8 py-6">
+      {/* Messages Area - Scrollable */}
+      <div className="flex-1 overflow-y-auto px-6 py-4">
         {messages.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -60,17 +60,19 @@ export function ChatPanel({
             </p>
           </motion.div>
         ) : (
-          <div className="max-w-screen-lg mx-auto space-y-8">
+          <div className="max-w-screen-lg mx-auto space-y-8 pb-4">
             {messages.map((message) => (
               <ChatMessageWithSave key={message.id} message={message} />
             ))}
             {isTyping && <TypingIndicator />}
           </div>
         )}
-      </ScrollArea>
+      </div>
 
-      {/* Input */}
-      <ChatInput onSend={onSendMessage} disabled={disabled || isTyping} />
+      {/* Input - Sticky at bottom */}
+      <div className="sticky bottom-0 bg-background border-t border-border/60 dark:border-border/40">
+        <ChatInput onSend={onSendMessage} disabled={disabled || isTyping} />
+      </div>
     </div>
   );
 }

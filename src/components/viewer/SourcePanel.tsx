@@ -71,7 +71,7 @@ export function SourcePanel({
           width: isCollapsed ? "60px" : "320px",
         }}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-        className="relative shrink-0 bg-background border-r border-muted flex flex-col h-full shadow-sm"
+        className="relative shrink-0 bg-background border-r border-border/60 dark:border-border/40 flex flex-col h-full"
       >
         {/* Header with Collapse Button */}
         <div className="flex items-center justify-between p-4 border-b border-border/50">
