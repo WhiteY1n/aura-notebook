@@ -37,7 +37,7 @@ export function ChatInput({ onSend, disabled, placeholder = "Ask anything about 
   };
 
   return (
-    <div className="border-t border-border bg-background/60 backdrop-blur-xl p-4 space-y-3">
+    <div className="border-t border-border bg-background/60 backdrop-blur-xl px-8 py-3 space-y-3">
       {/* Suggestions */}
       <div className="flex flex-wrap gap-2">
         {suggestions.map((suggestion) => (
