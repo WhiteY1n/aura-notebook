@@ -141,7 +141,7 @@ export default function ProjectView() {
       </header>
 
       {/* Main Content - Split Panels */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden w-full">
         {/* Sources Panel (Left) */}
         <SourcePanel
           sources={sources}
