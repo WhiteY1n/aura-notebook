@@ -1,8 +1,19 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, FileText, Plus, X, Youtube, Globe, Image, FileAudio } from "lucide-react";
+import {
+  File,
+  Globe,
+  Youtube,
+  FileText,
+  Plus,
+  Trash2,
+  Folder,
+  ChevronLeft,
+  ChevronRight,
+  FileAudio,
+  Image,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,30 +24,34 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 export interface Source {
   id: string;
   title: string;
-  type: "pdf" | "text" | "youtube" | "website" | "image" | "audio";
+  type: "pdf" | "text" | "youtube" | "website" | "audio" | "image";
 }
 
 interface SourcePanelProps {
   sources: Source[];
-  onRemoveSource: (id: string) => void;
+  onRemoveSource: (sourceId: string) => void;
   onAddSource: () => void;
-  onSelectSource: (id: string) => void;
+  onSelectSource: (sourceId: string) => void;
   selectedSourceId?: string;
 }
 
-const sourceIcons: Record<Source["type"], typeof FileText> = {
-  pdf: FileText,
-  text: FileText,
-  youtube: Youtube,
-  website: Globe,
-  image: Image,
-  audio: FileAudio,
-};
+function getSourceIcon(type: Source["type"]) {
+  const icons = {
+    pdf: <File className="h-4 w-4" />,
+    text: <FileText className="h-4 w-4" />,
+    youtube: <Youtube className="h-4 w-4" />,
+    website: <Globe className="h-4 w-4" />,
+    audio: <FileAudio className="h-4 w-4" />,
+    image: <Image className="h-4 w-4" />,
+  };
+  return icons[type];
+}
 
 export function SourcePanel({
   sources,
@@ -46,151 +61,146 @@ export function SourcePanel({
   selectedSourceId,
 }: SourcePanelProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [sourceToDelete, setSourceToDelete] = useState<string | null>(null);
-
-  const handleDeleteClick = (e: React.MouseEvent, sourceId: string) => {
-    e.stopPropagation();
-    setSourceToDelete(sourceId);
-    setDeleteDialogOpen(true);
-  };
-
-  const confirmDelete = () => {
-    if (sourceToDelete) {
-      onRemoveSource(sourceToDelete);
-      setSourceToDelete(null);
-    }
-    setDeleteDialogOpen(false);
-  };
-
-  const panelVariants = {
-    expanded: { width: 320, opacity: 1 },
-    collapsed: { width: 48, opacity: 1 },
-  };
+  const [deleteSourceId, setDeleteSourceId] = useState<string | null>(null);
 
   return (
     <>
       <motion.div
         initial={false}
-        animate={isCollapsed ? "collapsed" : "expanded"}
-        variants={panelVariants}
+        animate={{
+          width: isCollapsed ? "60px" : "320px",
+        }}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-        className="relative h-full bg-background border-r border-border/50 flex flex-col shadow-sm"
+        className="relative shrink-0 bg-background border-r border-muted flex flex-col h-full shadow-sm"
       >
-        {/* Collapse Toggle */}
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="absolute -right-3 top-4 z-10 h-6 w-6 rounded-full bg-background border border-border shadow-sm hover:bg-secondary"
-        >
-          {isCollapsed ? (
-            <ChevronRight className="h-3 w-3" />
-          ) : (
-            <ChevronLeft className="h-3 w-3" />
-          )}
-        </Button>
-
-        <AnimatePresence mode="wait">
-          {isCollapsed ? (
+        {/* Header with Collapse Button */}
+        <div className="flex items-center justify-between p-4 border-b border-border/50">
+          {!isCollapsed && (
             <motion.div
-              key="collapsed"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center py-4 gap-2"
+              className="flex items-center gap-2 text-muted-foreground"
             >
-              <FileText className="h-5 w-5 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground [writing-mode:vertical-rl] rotate-180">
-                Sources ({sources.length})
-              </span>
+              <Folder className="h-4 w-4" />
+              <span className="text-sm font-medium">Sources</span>
             </motion.div>
-          ) : (
-            <motion.div
-              key="expanded"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col h-full"
-            >
-              {/* Header */}
-              <div className="p-4 border-b border-border/50">
-                <div className="flex items-center justify-between">
-                  <h2 className="font-semibold text-foreground">Sources</h2>
-                  <span className="text-sm text-muted-foreground">
-                    {sources.length}
-                  </span>
-                </div>
-              </div>
+          )}
+          
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          >
+            {isCollapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
 
-              {/* Sources List */}
-              <ScrollArea className="flex-1 px-2 py-2">
-                <div className="space-y-1">
-                  {sources.map((source) => {
-                    const Icon = sourceIcons[source.type];
-                    return (
-                      <motion.div
-                        key={source.id}
-                        initial={{ opacity: 0, x: -16 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -16 }}
-                        whileHover={{ scale: 1.01 }}
-                        onClick={() => onSelectSource(source.id)}
-                        className={cn(
-                          "group flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors",
-                          selectedSourceId === source.id
-                            ? "bg-primary/10 text-primary"
-                            : "hover:bg-secondary/80"
-                        )}
-                      >
-                        <div
-                          className={cn(
-                            "h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0",
-                            selectedSourceId === source.id
-                              ? "bg-primary/20"
-                              : "bg-secondary"
-                          )}
-                        >
-                          <Icon className="h-4 w-4" />
-                        </div>
-                        <span className="flex-1 text-sm font-medium truncate">
-                          {source.title}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={(e) => handleDeleteClick(e, source.id)}
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </ScrollArea>
+        {/* Content */}
+        {!isCollapsed ? (
+          <ScrollArea className="flex-1 p-4">
+            <div className="space-y-2">
+              <AnimatePresence mode="popLayout">
+                {sources.map((source) => (
+                  <motion.div
+                    key={source.id}
+                    layout
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.2 }}
+                    onClick={() => onSelectSource(source.id)}
+                    className={cn(
+                      "group relative flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all",
+                      "hover:bg-muted/50 hover:shadow-sm",
+                      selectedSourceId === source.id
+                        ? "bg-primary/10 border border-primary/20 shadow-sm"
+                        : "bg-background border border-border/40"
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
+                        selectedSourceId === source.id
+                          ? "bg-primary/20 text-primary"
+                          : "bg-muted text-muted-foreground group-hover:bg-muted/80"
+                      )}
+                    >
+                      {getSourceIcon(source.type)}
+                    </div>
+
+                    <span
+                      className={cn(
+                        "flex-1 text-sm font-medium truncate transition-colors",
+                        selectedSourceId === source.id
+                          ? "text-primary"
+                          : "text-foreground"
+                      )}
+                    >
+                      {source.title}
+                    </span>
+
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteSourceId(source.id);
+                      }}
+                      className={cn(
+                        "opacity-0 group-hover:opacity-100 transition-opacity shrink-0",
+                        "h-6 w-6 text-muted-foreground hover:text-destructive"
+                      )}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
 
               {/* Add Source Button */}
-              <div className="p-3 border-t border-border/50">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.1 }}
+              >
                 <Button
                   variant="outline"
                   onClick={onAddSource}
-                  className="w-full gap-2"
+                  className="w-full h-12 rounded-xl border-dashed border-2 border-muted hover:border-primary/50 hover:bg-primary/5 transition-all gap-2"
                 >
                   <Plus className="h-4 w-4" />
-                  Add source
+                  <span className="text-sm font-medium">Add source</span>
                 </Button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </motion.div>
+            </div>
+          </ScrollArea>
+        ) : (
+          <div className="flex flex-col items-center gap-3 p-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onAddSource}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <Plus className="h-5 w-5" />
+            </Button>
+          </div>
+        )}
       </motion.div>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialog
+        open={deleteSourceId !== null}
+        onOpenChange={(open) => !open && setDeleteSourceId(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove source?</AlertDialogTitle>
+            <AlertDialogTitle>Remove source</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to remove this source? This action cannot be
               undone.
@@ -198,7 +208,16 @@ export function SourcePanel({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Remove</AlertDialogAction>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteSourceId) {
+                  onRemoveSource(deleteSourceId);
+                  setDeleteSourceId(null);
+                }
+              }}
+            >
+              Remove
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
