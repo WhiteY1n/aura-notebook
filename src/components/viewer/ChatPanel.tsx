@@ -31,9 +31,9 @@ export function ChatPanel({
   disabled = false,
 }: ChatPanelProps) {
   return (
-    <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden border-l border-border/60 dark:border-border/40 shadow-inner">
+    <div className="flex flex-col h-full min-w-0 border-l border-border/60 dark:border-border/40 shadow-inner">
       {/* Header */}
-      <div className="flex items-center justify-end px-6 py-4 border-b border-border/50">
+      <div className="flex-shrink-0 flex items-center justify-end px-6 py-4 border-b border-border/50">
         <div className="flex items-center gap-2 text-muted-foreground">
           <MessageSquare className="h-4 w-4" />
           <span className="text-sm font-medium">Chat</span>
@@ -41,13 +41,14 @@ export function ChatPanel({
       </div>
 
       {/* Messages Area - Scrollable */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
-        {messages.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center justify-center min-h-[50vh] text-center"
-          >
+      <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
+        <div className="px-6 py-4">
+          {messages.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center justify-center py-20 text-center"
+            >
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-4">
               <StickyNote className="h-8 w-8 text-primary" />
             </div>
@@ -66,11 +67,12 @@ export function ChatPanel({
             ))}
             {isTyping && <TypingIndicator />}
           </div>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* Input - Sticky at bottom */}
-      <div className="sticky bottom-0 bg-background border-t border-border/60 dark:border-border/40">
+      {/* Input - Fixed at bottom */}
+      <div className="flex-shrink-0 bg-background border-t border-border/60 dark:border-border/40">
         <ChatInput onSend={onSendMessage} disabled={disabled || isTyping} />
       </div>
     </div>
