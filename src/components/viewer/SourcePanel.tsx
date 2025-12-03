@@ -24,7 +24,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 export interface Source {
@@ -71,10 +70,10 @@ export function SourcePanel({
           width: isCollapsed ? "60px" : "320px",
         }}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-        className="relative shrink-0 bg-background border-r border-border/60 dark:border-border/40 flex flex-col h-full"
+        className="relative shrink-0 bg-background border-r border-border/60 dark:border-border/40 flex flex-col"
       >
         {/* Header with Collapse Button */}
-        <div className="flex items-center justify-between p-4 border-b border-border/50">
+        <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-border/50">
           {!isCollapsed && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -103,8 +102,8 @@ export function SourcePanel({
 
         {/* Content */}
         {!isCollapsed ? (
-          <ScrollArea className="flex-1 p-4">
-            <div className="space-y-2">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
+            <div className="p-4 space-y-2">
               <AnimatePresence mode="popLayout">
                 {sources.map((source) => (
                   <motion.div
@@ -179,7 +178,7 @@ export function SourcePanel({
                 </Button>
               </motion.div>
             </div>
-          </ScrollArea>
+          </div>
         ) : (
           <div className="flex flex-col items-center gap-3 p-2">
             <Button

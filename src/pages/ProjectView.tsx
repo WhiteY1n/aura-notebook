@@ -152,11 +152,13 @@ export default function ProjectView() {
         />
 
         {/* Chat Panel (Center/Right) */}
-        <ChatPanel
-          messages={messages}
-          isTyping={isTyping}
-          onSendMessage={handleSendMessage}
-        />
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <ChatPanel
+            messages={messages}
+            isTyping={isTyping}
+            onSendMessage={handleSendMessage}
+          />
+        </div>
 
         {/* Studio Panel (Desktop) */}
         <StudioPanel
