@@ -8,25 +8,26 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
 
-interface UserAvatarMenuProps {
-  name?: string;
-  email?: string;
-  avatarUrl?: string;
-  onLogout?: () => void;
-}
+export function UserAvatarMenu() {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
-export function UserAvatarMenu({
-  name = "User Name",
-  email = "user@example.com",
-  avatarUrl,
-  onLogout,
-}: UserAvatarMenuProps) {
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/auth");
+  };
+
+  const name = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
+  const email = user?.email || "user@example.com";
+  const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`;
+
   const initials = name
     .split(" ")
-    .map((n) => n[0])
+    .map((n: string) => n[0])
     .join("")
     .toUpperCase()
     .slice(0, 2);
@@ -40,12 +41,12 @@ export function UserAvatarMenu({
           className="rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         >
           <Avatar className="h-8 w-8 cursor-pointer">
-            <AvatarImage src={avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`} alt={name} />
+            <AvatarImage src={avatarUrl} alt={name} />
             <AvatarFallback className="bg-primary text-primary-foreground text-sm">{initials}</AvatarFallback>
           </Avatar>
         </motion.button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent align="end" className="w-56 bg-popover">
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium">{name}</p>
@@ -69,8 +70,8 @@ export function UserAvatarMenu({
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem 
-          className="text-destructive focus:text-destructive"
-          onClick={onLogout}
+          className="text-destructive focus:text-destructive cursor-pointer"
+          onClick={handleLogout}
         >
           <LogOut className="mr-2 h-4 w-4" />
           Log out
