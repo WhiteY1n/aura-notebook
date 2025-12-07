@@ -24,6 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { AddSourceDialog } from "@/components/sources";
 import { cn } from "@/lib/utils";
 
 export interface Source {
@@ -35,9 +36,10 @@ export interface Source {
 interface SourcePanelProps {
   sources: Source[];
   onRemoveSource: (sourceId: string) => void;
-  onAddSource: () => void;
   onSelectSource: (sourceId: string) => void;
   selectedSourceId?: string;
+  projectId: string;
+  onSourceAdded?: () => void;
 }
 
 function getSourceIcon(type: Source["type"]) {
@@ -55,12 +57,14 @@ function getSourceIcon(type: Source["type"]) {
 export function SourcePanel({
   sources,
   onRemoveSource,
-  onAddSource,
   onSelectSource,
   selectedSourceId,
+  projectId,
+  onSourceAdded,
 }: SourcePanelProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [deleteSourceId, setDeleteSourceId] = useState<string | null>(null);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
 
   return (
     <>
@@ -170,7 +174,7 @@ export function SourcePanel({
               >
                 <Button
                   variant="outline"
-                  onClick={onAddSource}
+                  onClick={() => setAddDialogOpen(true)}
                   className="w-full h-12 rounded-xl border-dashed border-2 border-muted hover:border-primary/50 hover:bg-primary/5 transition-all gap-2"
                 >
                   <Plus className="h-4 w-4" />
@@ -184,7 +188,7 @@ export function SourcePanel({
             <Button
               variant="ghost"
               size="icon"
-              onClick={onAddSource}
+              onClick={() => setAddDialogOpen(true)}
               className="text-muted-foreground hover:text-foreground"
             >
               <Plus className="h-5 w-5" />
@@ -220,6 +224,13 @@ export function SourcePanel({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AddSourceDialog
+        open={addDialogOpen}
+        onOpenChange={setAddDialogOpen}
+        projectId={projectId}
+        onSourceAdded={onSourceAdded}
+      />
     </>
   );
 }

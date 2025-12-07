@@ -86,12 +86,13 @@ export default function ProjectView() {
     }
   };
 
-  const handleAddSource = () => {
-    console.log("Add source clicked");
-  };
-
   const handleSelectSource = (sourceId: string) => {
     setSelectedSourceId(sourceId);
+  };
+
+  const handleSourceAdded = () => {
+    // Will be implemented with real Supabase data fetching
+    console.log("Source added");
   };
 
   const handleDeleteGeneratedItem = (itemId: string) => {
@@ -146,9 +147,10 @@ export default function ProjectView() {
         <SourcePanel
           sources={sources}
           onRemoveSource={handleRemoveSource}
-          onAddSource={handleAddSource}
           onSelectSource={handleSelectSource}
           selectedSourceId={selectedSourceId}
+          projectId={id || "1"}
+          onSourceAdded={handleSourceAdded}
         />
 
         {/* Chat Panel (Center/Right) */}
