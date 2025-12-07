@@ -44,6 +44,71 @@ export type Database = {
         }
         Relationships: []
       }
+      projects: {
+        Row: {
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sources: {
+        Row: {
+          content: string | null
+          created_at: string
+          file_size: number | null
+          file_url: string | null
+          id: string
+          project_id: string
+          title: string
+          type: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          file_size?: number | null
+          file_url?: string | null
+          id?: string
+          project_id: string
+          title: string
+          type: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          file_size?: number | null
+          file_url?: string | null
+          id?: string
+          project_id?: string
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sources_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
