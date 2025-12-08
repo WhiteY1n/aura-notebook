@@ -247,71 +247,78 @@ export default function ProjectView() {
 
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden w-full">
-        {!isLoading && !hasSources ? (
-          /* Empty State */
-          <div className="flex-1 flex items-center justify-center p-8">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className="flex flex-col items-center text-center max-w-md"
-            >
-              <div className="p-6 rounded-full bg-primary/10 mb-6">
-                <CloudUpload className="h-12 w-12 text-primary" />
+        {/* Sources Panel (Left) */}
+        <SourcePanel
+          sources={sources}
+          onRemoveSource={handleRemoveSource}
+          onSelectSource={handleSelectSource}
+          selectedSourceId={selectedSourceId}
+          projectId={id || ""}
+          onSourceAdded={handleSourceAdded}
+        />
+
+        {/* Chat Panel (Center/Right) */}
+        <div className="flex-1 min-w-0 overflow-hidden">
+          {!isLoading && !hasSources ? (
+            /* Empty State inside Chat area */
+            <div className="flex flex-col h-full">
+              {/* Chat Header */}
+              <div className="flex-shrink-0 flex items-center justify-end px-6 py-4 border-b border-border/50">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <span className="text-sm font-medium">Chat</span>
+                </div>
               </div>
-              <h2 className="text-2xl font-semibold text-foreground mb-2">
-                Add a source to get started
-              </h2>
-              <p className="text-muted-foreground mb-8">
-                Upload PDFs, add links, or paste content to begin
-              </p>
-              <Button
-                size="lg"
-                onClick={() => setAddDialogOpen(true)}
-                className="gap-2"
-              >
-                <CloudUpload className="h-5 w-5" />
-                Upload a source
-              </Button>
-            </motion.div>
-          </div>
-        ) : (
-          /* Loaded State with Sources */
-          <>
-            {/* Sources Panel (Left) */}
-            <SourcePanel
-              sources={sources}
-              onRemoveSource={handleRemoveSource}
-              onSelectSource={handleSelectSource}
-              selectedSourceId={selectedSourceId}
-              projectId={id || ""}
-              onSourceAdded={handleSourceAdded}
-            />
-
-            {/* Chat Panel (Center/Right) */}
-            <div className="flex-1 min-w-0 overflow-hidden">
-              <ChatPanel
-                messages={messages}
-                isTyping={isTyping}
-                onSendMessage={handleSendMessage}
-              />
+              
+              {/* Empty State Content */}
+              <div className="flex-1 flex items-center justify-center p-8">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="flex flex-col items-center text-center max-w-md"
+                >
+                  <div className="p-6 rounded-full bg-primary/10 mb-6">
+                    <CloudUpload className="h-12 w-12 text-primary" />
+                  </div>
+                  <h2 className="text-2xl font-semibold text-foreground mb-2">
+                    Add a source to get started
+                  </h2>
+                  <p className="text-muted-foreground mb-8">
+                    Upload PDFs, add links, or paste content to begin
+                  </p>
+                  <Button
+                    size="lg"
+                    onClick={() => setAddDialogOpen(true)}
+                    className="gap-2"
+                  >
+                    <CloudUpload className="h-5 w-5" />
+                    Upload a source
+                  </Button>
+                </motion.div>
+              </div>
             </div>
-
-            {/* Studio Panel (Desktop) */}
-            <StudioPanel
-              projectId={id || ""}
-              generatedItems={generatedItems}
-              onDeleteItem={handleDeleteGeneratedItem}
+          ) : (
+            <ChatPanel
+              messages={messages}
+              isTyping={isTyping}
+              onSendMessage={handleSendMessage}
             />
+          )}
+        </div>
 
-            {/* Studio Sheet (Mobile) */}
-            <StudioSheet
-              projectId={id || ""}
-              generatedItems={generatedItems}
-              onDeleteItem={handleDeleteGeneratedItem}
-            />
-          </>
-        )}
+        {/* Studio Panel (Desktop) */}
+        <StudioPanel
+          projectId={id || ""}
+          generatedItems={generatedItems}
+          onDeleteItem={handleDeleteGeneratedItem}
+        />
+
+        {/* Studio Sheet (Mobile) */}
+        <StudioSheet
+          projectId={id || ""}
+          generatedItems={generatedItems}
+          onDeleteItem={handleDeleteGeneratedItem}
+        />
       </div>
 
       {/* Add Source Dialog */}

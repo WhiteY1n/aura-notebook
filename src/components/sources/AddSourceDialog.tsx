@@ -72,53 +72,92 @@ export function AddSourceDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Add source</DialogTitle>
+            <DialogTitle>Add sources</DialogTitle>
+            <p className="text-sm text-muted-foreground mt-2">
+              Sources let InsightsLM base its responses on the information that matters most to you.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              (Examples: marketing plans, course reading, research notes, meeting transcripts, sales documents, etc.)
+            </p>
           </DialogHeader>
 
-          <div className="grid grid-cols-2 gap-3 py-4">
-            {sourceOptions.map((option) => (
+          <div className="space-y-3 py-4">
+            {/* Upload Sources - Large top section */}
+            <button
+              onClick={() => handleOptionClick("upload")}
+              className={cn(
+                "w-full flex flex-col items-center justify-center gap-3 p-8 rounded-xl",
+                "border-2 border-dashed border-border/60",
+                "bg-muted/30 hover:bg-muted/60 hover:border-primary/40",
+                "transition-all duration-200 group",
+                "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              )}
+            >
+              <div className="p-4 rounded-xl bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
+                <Upload className="h-8 w-8" />
+              </div>
+              <div className="text-center">
+                <p className="font-semibold text-base text-foreground">
+                  Upload sources
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Drag & drop or choose file to upload
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Supported file types: PDF, txt, Markdown, Audio (e.g. mp3)
+                </p>
+              </div>
+            </button>
+
+            {/* Bottom row - Link and Paste Text */}
+            <div className="grid grid-cols-2 gap-3">
               <button
-                key={option.id}
-                onClick={() => handleOptionClick(option.id)}
-                disabled={option.disabled}
+                onClick={() => handleOptionClick("website")}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-3 p-6 rounded-xl",
-                  "border-2 border-dashed border-border/60",
-                  "bg-muted/30 hover:bg-muted/60 hover:border-primary/40",
+                  "flex flex-col items-center justify-center gap-2 p-4 rounded-xl",
+                  "border border-border/60",
+                  "bg-background hover:bg-muted/40 hover:border-primary/40",
                   "transition-all duration-200 group",
-                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                  option.disabled && "opacity-50 cursor-not-allowed"
+                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 )}
               >
-                <div className="p-3 rounded-xl bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
-                  {option.icon}
+                <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
+                  <Link className="h-5 w-5" />
                 </div>
                 <div className="text-center">
                   <p className="font-medium text-sm text-foreground">
-                    {option.label}
+                    Link - Website
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {option.description}
+                    Multiple URLs at once
                   </p>
                 </div>
               </button>
-            ))}
 
-            {/* Empty placeholder for 4th grid item */}
-            <div className="flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 border-dashed border-border/30 bg-muted/10 opacity-40">
-              <div className="p-3 rounded-xl bg-muted/50 text-muted-foreground">
-                <Upload className="h-6 w-6" />
-              </div>
-              <div className="text-center">
-                <p className="font-medium text-sm text-muted-foreground">
-                  Coming soon
-                </p>
-                <p className="text-xs text-muted-foreground/70 mt-0.5">
-                  More options
-                </p>
-              </div>
+              <button
+                onClick={() => handleOptionClick("paste")}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-2 p-4 rounded-xl",
+                  "border border-border/60",
+                  "bg-background hover:bg-muted/40 hover:border-primary/40",
+                  "transition-all duration-200 group",
+                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                )}
+              >
+                <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
+                  <Clipboard className="h-5 w-5" />
+                </div>
+                <div className="text-center">
+                  <p className="font-medium text-sm text-foreground">
+                    Paste Text - Copied Text
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Add copied content
+                  </p>
+                </div>
+              </button>
             </div>
           </div>
         </DialogContent>
