@@ -3,21 +3,34 @@ import { ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
   disabled?: boolean;
   placeholder?: string;
+  exampleQuestions?: string[];
 }
 
-const suggestions = [
+const defaultSuggestions = [
   { icon: "📝", label: "Summarize", prompt: "Give me a comprehensive summary of this content" },
   { icon: "💡", label: "Key ideas", prompt: "What are the main key ideas and takeaways?" },
   { icon: "🧒", label: "Explain simply", prompt: "Explain this like I'm 12 years old" },
   { icon: "❓", label: "Questions", prompt: "Generate study questions based on this content" },
 ];
 
-export function ChatInput({ onSend, disabled, placeholder = "Ask anything about your sources..." }: ChatInputProps) {
+export function ChatInput({ 
+  onSend, 
+  disabled, 
+  placeholder = "Ask anything about your sources...",
+  exampleQuestions = []
+}: ChatInputProps) {
   const [input, setInput] = useState("");
   const [isFocused, setIsFocused] = useState(false);
 
@@ -36,25 +49,12 @@ export function ChatInput({ onSend, disabled, placeholder = "Ask anything about 
     }
   };
 
+  const handleQuestionClick = (question: string) => {
+    onSend(question);
+  };
+
   return (
     <div className="px-6 py-3 space-y-3">
-      {/* Suggestions */}
-      <div className="flex flex-wrap gap-2">
-        {suggestions.map((suggestion) => (
-          <motion.button
-            key={suggestion.label}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => onSend(suggestion.prompt)}
-            disabled={disabled}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-full bg-secondary hover:bg-secondary/80 text-foreground transition-colors disabled:opacity-50"
-          >
-            <span>{suggestion.icon}</span>
-            <span>{suggestion.label}</span>
-          </motion.button>
-        ))}
-      </div>
-
       {/* Input with arrow inside */}
       <form onSubmit={handleSubmit} className="relative">
         <div 
@@ -94,6 +94,51 @@ export function ChatInput({ onSend, disabled, placeholder = "Ask anything about 
           </motion.div>
         </div>
       </form>
+
+      {/* Example Questions Carousel or Static Suggestions */}
+      {exampleQuestions.length > 0 ? (
+        <div className="w-full">
+          <Carousel className="w-full">
+            <CarouselContent className="-ml-2">
+              {exampleQuestions.map((question, index) => (
+                <CarouselItem key={index} className="pl-2 basis-auto">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-left whitespace-nowrap h-auto py-2 px-3 text-sm hover:bg-secondary"
+                    onClick={() => handleQuestionClick(question)}
+                    disabled={disabled}
+                  >
+                    {question}
+                  </Button>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            {exampleQuestions.length > 2 && (
+              <>
+                <CarouselPrevious className="left-0" />
+                <CarouselNext className="right-0" />
+              </>
+            )}
+          </Carousel>
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {defaultSuggestions.map((suggestion) => (
+            <motion.button
+              key={suggestion.label}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => onSend(suggestion.prompt)}
+              disabled={disabled}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-full bg-secondary hover:bg-secondary/80 text-foreground transition-colors disabled:opacity-50"
+            >
+              <span>{suggestion.icon}</span>
+              <span>{suggestion.label}</span>
+            </motion.button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

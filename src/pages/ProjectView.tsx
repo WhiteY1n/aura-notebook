@@ -8,8 +8,10 @@ import { GeneratedItem } from "@/components/project/StudioListItem";
 import { Button } from "@/components/ui/button";
 import { AddSourceDialog } from "@/components/sources";
 import { useTheme } from "@/hooks/useTheme";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { useNotebooks } from "@/hooks/useNotebooks";
+import { useSources } from "@/hooks/useSources";
+import { useSourceDelete } from "@/hooks/useSourceDelete";
+import { useChatMessages } from "@/hooks/useChatMessages";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 
@@ -22,168 +24,110 @@ export default function ProjectView() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { setTheme, isDark } = useTheme();
-  const { user } = useAuth();
   const { toast } = useToast();
   
-  const [project, setProject] = useState<{ id: string; title: string } | null>(null);
-  const [sources, setSources] = useState<Source[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { notebooks, isLoading: notebooksLoading } = useNotebooks();
+  const { sources: sourcesData, isLoading: sourcesLoading } = useSources(id);
+  const { deleteSource } = useSourceDelete();
+  const { messages: chatMessages, sendMessage, isSending } = useChatMessages(id);
+  
   const [selectedSourceId, setSelectedSourceId] = useState<string | undefined>();
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isTyping, setIsTyping] = useState(false);
   const [generatedItems, setGeneratedItems] = useState<GeneratedItem[]>(mockGeneratedItems);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
 
-  // Fetch project and sources
+  const project = notebooks?.find(nb => nb.id === id);
+  const isLoading = notebooksLoading || sourcesLoading;
+  
+  const sources: Source[] = (sourcesData || []).map(s => ({
+    id: s.id,
+    title: s.title,
+    type: s.type as Source["type"],
+  }));
+
+  // Transform chat messages to Message format for ChatPanel
+  const messages: Message[] = (chatMessages || []).map((msg, index) => {
+    const isUser = msg.message.type === 'human';
+    let content = '';
+    
+    if (typeof msg.message.content === 'string') {
+      content = msg.message.content;
+    } else if (msg.message.content?.segments) {
+      // AI message with citations
+      content = msg.message.content.segments
+        .map(seg => seg.text)
+        .join('');
+    }
+
+    return {
+      id: msg.id?.toString() || index.toString(),
+      role: isUser ? 'user' : 'assistant',
+      content,
+      timestamp: new Date().toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      }),
+    };
+  });
+
+  // Handle notebook not found - but give some time for real-time updates to arrive
   useEffect(() => {
-    if (!id || !user) return;
-
-    const fetchData = async () => {
-      setIsLoading(true);
-      
-      try {
-        // Fetch project
-        const { data: projectData, error: projectError } = await supabase
-          .from("projects")
-          .select("*")
-          .eq("id", id)
-          .maybeSingle();
-
-        if (projectError) throw projectError;
-
-        if (!projectData) {
+    if (!notebooksLoading && !project && id) {
+      // Wait a bit for real-time subscription to update
+      const timeoutId = setTimeout(() => {
+        // Check again if project still doesn't exist
+        const currentProject = notebooks?.find(nb => nb.id === id);
+        if (!currentProject) {
           toast({
-            title: "Project not found",
-            description: "The project you're looking for doesn't exist",
+            title: "Notebook not found",
+            description: "The notebook you're looking for doesn't exist",
             variant: "destructive",
           });
           navigate("/dashboard");
-          return;
         }
-
-        setProject({ id: projectData.id, title: projectData.title });
-
-        // Fetch sources
-        const { data: sourcesData, error: sourcesError } = await supabase
-          .from("sources")
-          .select("*")
-          .eq("project_id", id)
-          .order("created_at", { ascending: false });
-
-        if (sourcesError) throw sourcesError;
-
-        setSources(
-          (sourcesData || []).map((s) => ({
-            id: s.id,
-            title: s.title,
-            type: s.type as Source["type"],
-          }))
-        );
-      } catch (error) {
-        console.error("Error fetching project:", error);
-        toast({
-          title: "Error loading project",
-          description: "Something went wrong",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-
-    // Real-time subscription for sources
-    const channel = supabase
-      .channel(`sources-${id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "sources",
-          filter: `project_id=eq.${id}`,
-        },
-        (payload) => {
-          if (payload.eventType === "INSERT") {
-            const newSource = payload.new as any;
-            setSources((prev) => [
-              { id: newSource.id, title: newSource.title, type: newSource.type },
-              ...prev,
-            ]);
-          } else if (payload.eventType === "DELETE") {
-            const deletedId = (payload.old as any).id;
-            setSources((prev) => prev.filter((s) => s.id !== deletedId));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [id, user, navigate, toast]);
+      }, 500);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [notebooksLoading, project, id, navigate, toast, notebooks]);
 
   const handleSendMessage = useCallback((content: string) => {
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content,
-      timestamp: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
-    setMessages((prev) => [...prev, userMessage]);
-    setIsTyping(true);
-
-    // Simulate AI response
-    setTimeout(() => {
-      const responses: Record<string, string> = {
-        "Give me a comprehensive summary of this content":
-          "**Summary of Machine Learning Fundamentals**\n\nMachine learning is a subset of artificial intelligence that enables systems to learn from data automatically. The document covers:\n\n• **Supervised Learning**: Training with labeled data to predict outcomes\n• **Unsupervised Learning**: Finding hidden patterns in unlabeled data\n• **Reinforcement Learning**: Learning through trial and reward\n\nKey applications include image recognition, natural language processing, and autonomous systems.",
-        "What are the main key ideas and takeaways?":
-          "**Key Takeaways:**\n\n1. **Data is fundamental** - ML models are only as good as their training data\n2. **Three paradigms** - Supervised, unsupervised, and reinforcement learning serve different purposes\n3. **Feature engineering matters** - Proper data preparation significantly impacts model performance\n4. **Overfitting prevention** - Regularization and validation are crucial\n5. **Iterative process** - ML development requires continuous refinement",
-        "Explain this like I'm 12 years old":
-          "Imagine you have a robot friend that learns just like you do! 🤖\n\n**Machine learning** is teaching computers to figure things out on their own by showing them lots of examples.\n\nIt's like:\n• Teaching your dog tricks by giving treats 🐕\n• Getting better at video games by playing more 🎮\n• Learning to recognize your friends' faces 👤\n\nThe computer looks at patterns and makes guesses, getting smarter each time!",
-        "Generate study questions based on this content":
-          "**Study Questions:**\n\n1. What is the main difference between supervised and unsupervised learning?\n2. Name three real-world applications of machine learning.\n3. Why is feature engineering important in ML?\n4. What is overfitting and how can it be prevented?\n5. Explain reinforcement learning with an example.\n6. What role does training data play in model accuracy?",
-      };
-
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content:
-          responses[content] ||
-          "I've analyzed your sources. Machine learning is a fascinating field that enables computers to learn from data. The content covers fundamental concepts including supervised learning with labeled data, unsupervised learning for pattern discovery, and reinforcement learning for decision-making. Would you like me to elaborate on any specific topic?",
-        timestamp: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      };
-      setIsTyping(false);
-      setMessages((prev) => [...prev, aiMessage]);
-    }, 1500);
-  }, []);
+    if (!id) return;
+    
+    sendMessage(
+      {
+        message: content,
+        notebookId: id,
+      },
+      {
+        onError: (error: any) => {
+          console.error('Failed to send message:', error);
+          toast({
+            title: "Failed to send message",
+            description: error.message || "Please try again",
+            variant: "destructive",
+          });
+        },
+      }
+    );
+  }, [id, sendMessage, toast]);
 
   const handleRemoveSource = async (sourceId: string) => {
     try {
-      const { error } = await supabase
-        .from("sources")
-        .delete()
-        .eq("id", sourceId);
-
-      if (error) throw error;
-
-      setSources((prev) => prev.filter((s) => s.id !== sourceId));
+      await deleteSource.mutateAsync(sourceId);
+      
       if (selectedSourceId === sourceId) {
         setSelectedSourceId(undefined);
       }
-    } catch (error) {
+      
+      toast({
+        title: "Source deleted",
+        description: "The source has been removed successfully",
+      });
+    } catch (error: any) {
       console.error("Error deleting source:", error);
       toast({
         title: "Error deleting source",
-        description: "Something went wrong",
+        description: error.message || "Something went wrong",
         variant: "destructive",
       });
     }
@@ -204,9 +148,9 @@ export default function ProjectView() {
   const hasSources = sources.length > 0;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-border/50">
+      <header className="flex-shrink-0 z-30 bg-background/80 backdrop-blur-xl border-b border-border/50">
         <div className="flex items-center justify-between px-4 h-14">
           <div className="flex items-center gap-3">
             <Link to="/dashboard">
@@ -246,7 +190,7 @@ export default function ProjectView() {
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden w-full">
+      <div className="flex-1 flex overflow-hidden">
         {/* Sources Panel (Left) */}
         <SourcePanel
           sources={sources}
@@ -258,7 +202,7 @@ export default function ProjectView() {
         />
 
         {/* Chat Panel (Center/Right) */}
-        <div className="flex-1 min-w-0 overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden">
           {!isLoading && !hasSources ? (
             /* Empty State inside Chat area */
             <div className="flex flex-col h-full">
@@ -300,8 +244,9 @@ export default function ProjectView() {
           ) : (
             <ChatPanel
               messages={messages}
-              isTyping={isTyping}
+              isTyping={isSending}
               onSendMessage={handleSendMessage}
+              exampleQuestions={project?.example_questions || []}
             />
           )}
         </div>

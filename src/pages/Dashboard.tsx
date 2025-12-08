@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Loader2 } from "lucide-react";
 import { TopNav } from "@/components/dashboard/TopNav";
@@ -9,8 +9,9 @@ import { ProjectCard, Project } from "@/components/dashboard/ProjectCard";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { Button } from "@/components/ui/button";
 import { FadeIn } from "@/components/animations";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useNotebooks } from "@/hooks/useNotebooks";
+import { useNotebookDelete } from "@/hooks/useNotebookDelete";
+import { useNotebookUpdate } from "@/hooks/useNotebookUpdate";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -20,104 +21,24 @@ interface ProjectWithMeta extends Project {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { toast } = useToast();
-  const [projects, setProjects] = useState<ProjectWithMeta[]>([]);
+  const { notebooks, isLoading, createNotebook, isCreating } = useNotebooks();
+  const { deleteNotebook } = useNotebookDelete();
+  const { updateNotebook } = useNotebookUpdate();
   const [searchQuery, setSearchQuery] = useState("");
   const [layout, setLayout] = useState<"grid" | "list">("grid");
   const [sortOption, setSortOption] = useState<SortOption>("date");
-  const [isLoading, setIsLoading] = useState(true);
-  const [isCreating, setIsCreating] = useState(false);
 
-  // Fetch projects from Supabase
-  useEffect(() => {
-    if (!user) return;
-
-    const fetchProjects = async () => {
-      setIsLoading(true);
-      const { data, error } = await supabase
-        .from("projects")
-        .select(`
-          id,
-          title,
-          created_at,
-          updated_at,
-          sources:sources(count)
-        `)
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error("Error fetching projects:", error);
-        toast({
-          title: "Error loading projects",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        const formattedProjects: ProjectWithMeta[] = (data || []).map((p) => ({
-          id: p.id,
-          title: p.title,
-          lastUpdated: formatRelativeTime(new Date(p.updated_at)),
-          sourcesCount: p.sources?.[0]?.count || 0,
-          createdAt: new Date(p.created_at),
-        }));
-        setProjects(formattedProjects);
-      }
-      setIsLoading(false);
-    };
-
-    fetchProjects();
-
-    // Set up real-time subscription
-    const channel = supabase
-      .channel("projects-changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "projects",
-          filter: `user_id=eq.${user.id}`,
-        },
-        async (payload) => {
-          if (payload.eventType === "INSERT") {
-            const newProject = payload.new as any;
-            setProjects((prev) => [
-              {
-                id: newProject.id,
-                title: newProject.title,
-                lastUpdated: formatRelativeTime(new Date(newProject.updated_at)),
-                sourcesCount: 0,
-                createdAt: new Date(newProject.created_at),
-              },
-              ...prev,
-            ]);
-          } else if (payload.eventType === "UPDATE") {
-            const updated = payload.new as any;
-            setProjects((prev) =>
-              prev.map((p) =>
-                p.id === updated.id
-                  ? {
-                      ...p,
-                      title: updated.title,
-                      lastUpdated: formatRelativeTime(new Date(updated.updated_at)),
-                    }
-                  : p
-              )
-            );
-          } else if (payload.eventType === "DELETE") {
-            const deleted = payload.old as any;
-            setProjects((prev) => prev.filter((p) => p.id !== deleted.id));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, toast]);
+  // Transform notebooks to projects format
+  const projects = useMemo(() => {
+    return (notebooks || []).map((nb) => ({
+      id: nb.id,
+      title: nb.title,
+      lastUpdated: formatRelativeTime(new Date(nb.updated_at)),
+      sourcesCount: nb.sources?.[0]?.count || 0,
+      createdAt: new Date(nb.created_at),
+    }));
+  }, [notebooks]);
 
   const filteredAndSortedProjects = useMemo(() => {
     let result = projects.filter((project) =>
@@ -133,71 +54,52 @@ export default function Dashboard() {
     return result;
   }, [projects, searchQuery, sortOption]);
 
-  const handleCreateProject = async () => {
-    if (!user) return;
-
-    setIsCreating(true);
-    const { data, error } = await supabase
-      .from("projects")
-      .insert({
-        user_id: user.id,
+  const handleCreateProject = () => {
+    createNotebook(
+      {
         title: "Untitled notebook",
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Error creating project:", error);
-      toast({
-        title: "Failed to create notebook",
-        description: error.message,
-        variant: "destructive",
-      });
-      setIsCreating(false);
-    } else {
-      toast({
-        title: "Notebook created",
-        description: "Your new notebook is ready.",
-      });
-      navigate(`/project/${data.id}`);
-    }
+        description: "",
+      },
+      {
+        onSuccess: (newNotebook) => {
+          console.log('Navigating to notebook:', newNotebook.id);
+          navigate(`/project/${newNotebook.id}`);
+        },
+        onError: (error: any) => {
+          console.error('Failed to create notebook:', error);
+          toast({
+            title: "Failed to create notebook",
+            description: error.message,
+            variant: "destructive",
+          });
+        },
+      }
+    );
   };
 
   const handleRename = async (id: string, newTitle: string) => {
-    const { error } = await supabase
-      .from("projects")
-      .update({ title: newTitle })
-      .eq("id", id);
-
-    if (error) {
-      console.error("Error renaming project:", error);
+    try {
+      await updateNotebook.mutateAsync({
+        notebookId: id,
+        updates: { title: newTitle },
+      });
+      
+      toast({
+        title: "Notebook renamed",
+      });
+    } catch (error: any) {
+      console.error("Error renaming notebook:", error);
       toast({
         title: "Failed to rename",
         description: error.message,
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Notebook renamed",
-      });
     }
   };
 
-  const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("projects").delete().eq("id", id);
-
-    if (error) {
-      console.error("Error deleting project:", error);
-      toast({
-        title: "Failed to delete",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Notebook deleted",
-      });
-    }
+  const handleDelete = (id: string) => {
+    console.log('Delete button clicked for notebook:', id);
+    deleteNotebook(id);
   };
 
   const isEmpty = !isLoading && projects.length === 0;

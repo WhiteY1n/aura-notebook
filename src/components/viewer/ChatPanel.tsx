@@ -22,6 +22,7 @@ interface ChatPanelProps {
   isTyping: boolean;
   onSendMessage: (content: string) => void;
   disabled?: boolean;
+  exampleQuestions?: string[];
 }
 
 export function ChatPanel({
@@ -29,6 +30,7 @@ export function ChatPanel({
   isTyping,
   onSendMessage,
   disabled = false,
+  exampleQuestions = [],
 }: ChatPanelProps) {
   return (
     <div className="flex flex-col h-full min-w-0 border-l border-border/60 dark:border-border/40 shadow-inner">
@@ -40,8 +42,8 @@ export function ChatPanel({
         </div>
       </div>
 
-      {/* Messages Area - Scrollable */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
+      {/* Messages Area - Scrollable with ScrollArea */}
+      <ScrollArea className="flex-1 h-full">
         <div className="px-6 py-4">
           {messages.length === 0 ? (
             <motion.div
@@ -69,11 +71,15 @@ export function ChatPanel({
           </div>
           )}
         </div>
-      </div>
+      </ScrollArea>
 
       {/* Input - Fixed at bottom */}
       <div className="flex-shrink-0 bg-background border-t border-border/60 dark:border-border/40">
-        <ChatInput onSend={onSendMessage} disabled={disabled || isTyping} />
+        <ChatInput 
+          onSend={onSendMessage} 
+          disabled={disabled || isTyping}
+          exampleQuestions={exampleQuestions}
+        />
       </div>
     </div>
   );
