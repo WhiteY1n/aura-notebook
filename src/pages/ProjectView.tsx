@@ -1,41 +1,128 @@
-import { useState, useCallback } from "react";
-import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Moon, Sun } from "lucide-react";
+import { useState, useCallback, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, Moon, Sun, CloudUpload } from "lucide-react";
 import { SourcePanel, Source } from "@/components/viewer/SourcePanel";
 import { ChatPanel, Message } from "@/components/viewer/ChatPanel";
 import { StudioPanel, StudioSheet } from "@/components/project/StudioPanel";
 import { GeneratedItem } from "@/components/project/StudioListItem";
 import { Button } from "@/components/ui/button";
+import { AddSourceDialog } from "@/components/sources";
 import { useTheme } from "@/hooks/useTheme";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-
-// Mock data
-const mockSources: Source[] = [
-  { id: "1", title: "ML Fundamentals.pdf", type: "pdf" },
-  { id: "2", title: "Research Paper", type: "text" },
-  { id: "3", title: "YouTube Lecture", type: "youtube" },
-  { id: "4", title: "Course Website", type: "website" },
-];
 
 const mockGeneratedItems: GeneratedItem[] = [
   { id: "1", title: "ML Concepts Flashcards", type: "flashcards", createdAt: "Today" },
   { id: "2", title: "Chapter Summary", type: "summary", createdAt: "Yesterday" },
 ];
 
-const mockProject = {
-  id: "1",
-  title: "Introduction to Machine Learning",
-};
-
 export default function ProjectView() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { setTheme, isDark } = useTheme();
+  const { user } = useAuth();
+  const { toast } = useToast();
   
-  const [sources, setSources] = useState<Source[]>(mockSources);
+  const [project, setProject] = useState<{ id: string; title: string } | null>(null);
+  const [sources, setSources] = useState<Source[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedSourceId, setSelectedSourceId] = useState<string | undefined>();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [generatedItems, setGeneratedItems] = useState<GeneratedItem[]>(mockGeneratedItems);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+
+  // Fetch project and sources
+  useEffect(() => {
+    if (!id || !user) return;
+
+    const fetchData = async () => {
+      setIsLoading(true);
+      
+      try {
+        // Fetch project
+        const { data: projectData, error: projectError } = await supabase
+          .from("projects")
+          .select("*")
+          .eq("id", id)
+          .maybeSingle();
+
+        if (projectError) throw projectError;
+
+        if (!projectData) {
+          toast({
+            title: "Project not found",
+            description: "The project you're looking for doesn't exist",
+            variant: "destructive",
+          });
+          navigate("/dashboard");
+          return;
+        }
+
+        setProject({ id: projectData.id, title: projectData.title });
+
+        // Fetch sources
+        const { data: sourcesData, error: sourcesError } = await supabase
+          .from("sources")
+          .select("*")
+          .eq("project_id", id)
+          .order("created_at", { ascending: false });
+
+        if (sourcesError) throw sourcesError;
+
+        setSources(
+          (sourcesData || []).map((s) => ({
+            id: s.id,
+            title: s.title,
+            type: s.type as Source["type"],
+          }))
+        );
+      } catch (error) {
+        console.error("Error fetching project:", error);
+        toast({
+          title: "Error loading project",
+          description: "Something went wrong",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+
+    // Real-time subscription for sources
+    const channel = supabase
+      .channel(`sources-${id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "sources",
+          filter: `project_id=eq.${id}`,
+        },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            const newSource = payload.new as any;
+            setSources((prev) => [
+              { id: newSource.id, title: newSource.title, type: newSource.type },
+              ...prev,
+            ]);
+          } else if (payload.eventType === "DELETE") {
+            const deletedId = (payload.old as any).id;
+            setSources((prev) => prev.filter((s) => s.id !== deletedId));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [id, user, navigate, toast]);
 
   const handleSendMessage = useCallback((content: string) => {
     const userMessage: Message = {
@@ -79,10 +166,26 @@ export default function ProjectView() {
     }, 1500);
   }, []);
 
-  const handleRemoveSource = (sourceId: string) => {
-    setSources((prev) => prev.filter((s) => s.id !== sourceId));
-    if (selectedSourceId === sourceId) {
-      setSelectedSourceId(undefined);
+  const handleRemoveSource = async (sourceId: string) => {
+    try {
+      const { error } = await supabase
+        .from("sources")
+        .delete()
+        .eq("id", sourceId);
+
+      if (error) throw error;
+
+      setSources((prev) => prev.filter((s) => s.id !== sourceId));
+      if (selectedSourceId === sourceId) {
+        setSelectedSourceId(undefined);
+      }
+    } catch (error) {
+      console.error("Error deleting source:", error);
+      toast({
+        title: "Error deleting source",
+        description: "Something went wrong",
+        variant: "destructive",
+      });
     }
   };
 
@@ -91,13 +194,14 @@ export default function ProjectView() {
   };
 
   const handleSourceAdded = () => {
-    // Will be implemented with real Supabase data fetching
-    console.log("Source added");
+    // Sources will be updated via real-time subscription
   };
 
   const handleDeleteGeneratedItem = (itemId: string) => {
     setGeneratedItems((prev) => prev.filter((item) => item.id !== itemId));
   };
+
+  const hasSources = sources.length > 0;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -120,7 +224,7 @@ export default function ProjectView() {
               </motion.div>
             </Link>
             <h1 className="font-semibold text-foreground truncate">
-              {mockProject.title}
+              {project?.title || "Loading..."}
             </h1>
           </div>
           <div className="flex items-center gap-2">
@@ -141,41 +245,82 @@ export default function ProjectView() {
         </div>
       </header>
 
-      {/* Main Content - Split Panels */}
+      {/* Main Content */}
       <div className="flex-1 flex overflow-hidden w-full">
-        {/* Sources Panel (Left) */}
-        <SourcePanel
-          sources={sources}
-          onRemoveSource={handleRemoveSource}
-          onSelectSource={handleSelectSource}
-          selectedSourceId={selectedSourceId}
-          projectId={id || "1"}
-          onSourceAdded={handleSourceAdded}
-        />
+        {!isLoading && !hasSources ? (
+          /* Empty State */
+          <div className="flex-1 flex items-center justify-center p-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="flex flex-col items-center text-center max-w-md"
+            >
+              <div className="p-6 rounded-full bg-primary/10 mb-6">
+                <CloudUpload className="h-12 w-12 text-primary" />
+              </div>
+              <h2 className="text-2xl font-semibold text-foreground mb-2">
+                Add a source to get started
+              </h2>
+              <p className="text-muted-foreground mb-8">
+                Upload PDFs, add links, or paste content to begin
+              </p>
+              <Button
+                size="lg"
+                onClick={() => setAddDialogOpen(true)}
+                className="gap-2"
+              >
+                <CloudUpload className="h-5 w-5" />
+                Upload a source
+              </Button>
+            </motion.div>
+          </div>
+        ) : (
+          /* Loaded State with Sources */
+          <>
+            {/* Sources Panel (Left) */}
+            <SourcePanel
+              sources={sources}
+              onRemoveSource={handleRemoveSource}
+              onSelectSource={handleSelectSource}
+              selectedSourceId={selectedSourceId}
+              projectId={id || ""}
+              onSourceAdded={handleSourceAdded}
+            />
 
-        {/* Chat Panel (Center/Right) */}
-        <div className="flex-1 min-w-0 overflow-hidden">
-          <ChatPanel
-            messages={messages}
-            isTyping={isTyping}
-            onSendMessage={handleSendMessage}
-          />
-        </div>
+            {/* Chat Panel (Center/Right) */}
+            <div className="flex-1 min-w-0 overflow-hidden">
+              <ChatPanel
+                messages={messages}
+                isTyping={isTyping}
+                onSendMessage={handleSendMessage}
+              />
+            </div>
 
-        {/* Studio Panel (Desktop) */}
-        <StudioPanel
-          projectId={id || "1"}
-          generatedItems={generatedItems}
-          onDeleteItem={handleDeleteGeneratedItem}
-        />
+            {/* Studio Panel (Desktop) */}
+            <StudioPanel
+              projectId={id || ""}
+              generatedItems={generatedItems}
+              onDeleteItem={handleDeleteGeneratedItem}
+            />
 
-        {/* Studio Sheet (Mobile) */}
-        <StudioSheet
-          projectId={id || "1"}
-          generatedItems={generatedItems}
-          onDeleteItem={handleDeleteGeneratedItem}
-        />
+            {/* Studio Sheet (Mobile) */}
+            <StudioSheet
+              projectId={id || ""}
+              generatedItems={generatedItems}
+              onDeleteItem={handleDeleteGeneratedItem}
+            />
+          </>
+        )}
       </div>
+
+      {/* Add Source Dialog */}
+      <AddSourceDialog
+        open={addDialogOpen}
+        onOpenChange={setAddDialogOpen}
+        projectId={id || ""}
+        onSourceAdded={handleSourceAdded}
+      />
     </div>
   );
 }
