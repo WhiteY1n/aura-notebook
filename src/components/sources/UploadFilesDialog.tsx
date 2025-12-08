@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { Upload, File, FileText, FileAudio, X, Loader2 } from "lucide-react";
+import { useState, useCallback, useRef } from "react";
+import { Upload, File, FileText, FileAudio, X, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -8,6 +8,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,10 +21,13 @@ interface UploadFilesDialogProps {
   onSourceAdded?: () => void;
 }
 
-interface FileWithPreview {
+interface FileWithStatus {
   file: File;
   id: string;
   type: "pdf" | "text" | "audio";
+  status: "pending" | "uploading" | "success" | "error";
+  progress: number;
+  error?: string;
 }
 
 const ACCEPTED_TYPES = {
@@ -34,6 +38,7 @@ const ACCEPTED_TYPES = {
   "audio/wav": "audio",
 } as const;
 
+const ACCEPTED_EXTENSIONS = [".pdf", ".txt", ".md", ".mp3", ".wav"];
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 function getFileIcon(type: string) {
@@ -47,6 +52,22 @@ function getFileIcon(type: string) {
   }
 }
 
+function getFileTypeFromExtension(filename: string): "pdf" | "text" | "audio" | null {
+  const ext = filename.toLowerCase().split('.').pop();
+  switch (ext) {
+    case 'pdf':
+      return 'pdf';
+    case 'txt':
+    case 'md':
+      return 'text';
+    case 'mp3':
+    case 'wav':
+      return 'audio';
+    default:
+      return null;
+  }
+}
+
 export function UploadFilesDialog({
   open,
   onOpenChange,
@@ -55,51 +76,68 @@ export function UploadFilesDialog({
 }: UploadFilesDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [files, setFiles] = useState<FileWithPreview[]>([]);
+  const [files, setFiles] = useState<FileWithStatus[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const validateFile = useCallback((file: File): string | null => {
-    if (!Object.keys(ACCEPTED_TYPES).includes(file.type)) {
-      return `${file.name}: Unsupported file type`;
+  const validateFile = useCallback((file: File): { valid: boolean; type?: "pdf" | "text" | "audio"; error?: string } => {
+    // Check by MIME type first
+    if (Object.keys(ACCEPTED_TYPES).includes(file.type)) {
+      if (file.size > MAX_FILE_SIZE) {
+        return { valid: false, error: `Exceeds 50MB limit` };
+      }
+      return { valid: true, type: ACCEPTED_TYPES[file.type as keyof typeof ACCEPTED_TYPES] as "pdf" | "text" | "audio" };
     }
-    if (file.size > MAX_FILE_SIZE) {
-      return `${file.name}: File exceeds 50MB limit`;
+    
+    // Fallback to extension check
+    const typeFromExt = getFileTypeFromExtension(file.name);
+    if (typeFromExt) {
+      if (file.size > MAX_FILE_SIZE) {
+        return { valid: false, error: `Exceeds 50MB limit` };
+      }
+      return { valid: true, type: typeFromExt };
     }
-    return null;
+    
+    return { valid: false, error: `Unsupported file type` };
   }, []);
 
   const addFiles = useCallback(
     (newFiles: FileList | File[]) => {
       const fileArray = Array.from(newFiles);
-      const validFiles: FileWithPreview[] = [];
+      const validFiles: FileWithStatus[] = [];
       const errors: string[] = [];
 
       fileArray.forEach((file) => {
-        const error = validateFile(file);
-        if (error) {
-          errors.push(error);
+        const validation = validateFile(file);
+        if (!validation.valid) {
+          errors.push(`${file.name}: ${validation.error}`);
         } else {
-          const fileType = ACCEPTED_TYPES[file.type as keyof typeof ACCEPTED_TYPES];
-          validFiles.push({
-            file,
-            id: crypto.randomUUID(),
-            type: fileType as "pdf" | "text" | "audio",
-          });
+          // Check for duplicates
+          const isDuplicate = files.some(f => f.file.name === file.name && f.file.size === file.size);
+          if (!isDuplicate) {
+            validFiles.push({
+              file,
+              id: crypto.randomUUID(),
+              type: validation.type!,
+              status: "pending",
+              progress: 0,
+            });
+          }
         }
       });
 
       if (errors.length > 0) {
         toast({
           title: "Some files were rejected",
-          description: errors.join("\n"),
+          description: errors.slice(0, 3).join("\n") + (errors.length > 3 ? `\n...and ${errors.length - 3} more` : ""),
           variant: "destructive",
         });
       }
 
       setFiles((prev) => [...prev, ...validFiles]);
     },
-    [validateFile, toast]
+    [validateFile, toast, files]
   );
 
   const removeFile = (id: string) => {
@@ -127,23 +165,53 @@ export function UploadFilesDialog({
     setIsDragging(false);
   };
 
+  const updateFileStatus = (id: string, updates: Partial<FileWithStatus>) => {
+    setFiles((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, ...updates } : f))
+    );
+  };
+
   const handleUpload = async () => {
     if (!user || files.length === 0) return;
 
     setIsUploading(true);
+    let successCount = 0;
+    let errorCount = 0;
 
-    try {
-      for (const fileItem of files) {
+    for (const fileItem of files) {
+      if (fileItem.status === "success") {
+        successCount++;
+        continue;
+      }
+
+      updateFileStatus(fileItem.id, { status: "uploading", progress: 0 });
+
+      try {
         const filePath = `${user.id}/${projectId}/${crypto.randomUUID()}-${fileItem.file.name}`;
+
+        // Simulate progress updates
+        const progressInterval = setInterval(() => {
+          setFiles((prev) =>
+            prev.map((f) =>
+              f.id === fileItem.id && f.status === "uploading" && f.progress < 90
+                ? { ...f, progress: f.progress + 10 }
+                : f
+            )
+          );
+        }, 100);
 
         // Upload to storage
         const { error: uploadError } = await supabase.storage
           .from("project-files")
           .upload(filePath, fileItem.file);
 
+        clearInterval(progressInterval);
+
         if (uploadError) {
-          throw new Error(`Failed to upload ${fileItem.file.name}: ${uploadError.message}`);
+          throw new Error(uploadError.message);
         }
+
+        updateFileStatus(fileItem.id, { progress: 95 });
 
         // Get public URL
         const { data: urlData } = supabase.storage
@@ -160,27 +228,52 @@ export function UploadFilesDialog({
         });
 
         if (sourceError) {
-          throw new Error(`Failed to save ${fileItem.file.name}: ${sourceError.message}`);
+          throw new Error(sourceError.message);
         }
-      }
 
+        updateFileStatus(fileItem.id, { status: "success", progress: 100 });
+        successCount++;
+      } catch (error) {
+        console.error("Upload error:", error);
+        updateFileStatus(fileItem.id, {
+          status: "error",
+          progress: 0,
+          error: error instanceof Error ? error.message : "Upload failed",
+        });
+        errorCount++;
+      }
+    }
+
+    setIsUploading(false);
+
+    if (successCount > 0) {
       toast({
-        title: "Files uploaded",
-        description: `${files.length} source${files.length > 1 ? "s" : ""} added successfully`,
+        title: "Upload complete",
+        description: `${successCount} file${successCount > 1 ? "s" : ""} uploaded${errorCount > 0 ? `, ${errorCount} failed` : ""}`,
       });
 
-      setFiles([]);
-      onOpenChange(false);
       onSourceAdded?.();
-    } catch (error) {
-      console.error("Upload error:", error);
+
+      // Close dialog if all succeeded
+      if (errorCount === 0) {
+        setTimeout(() => {
+          setFiles([]);
+          onOpenChange(false);
+        }, 500);
+      }
+    } else if (errorCount > 0) {
       toast({
         title: "Upload failed",
-        description: error instanceof Error ? error.message : "Something went wrong",
+        description: "All files failed to upload",
         variant: "destructive",
       });
-    } finally {
-      setIsUploading(false);
+    }
+  };
+
+  const handleClose = () => {
+    if (!isUploading) {
+      setFiles([]);
+      onOpenChange(false);
     }
   };
 
@@ -190,8 +283,11 @@ export function UploadFilesDialog({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  const pendingFiles = files.filter((f) => f.status !== "success");
+  const canUpload = pendingFiles.length > 0 && !isUploading;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Upload sources</DialogTitle>
@@ -202,86 +298,125 @@ export function UploadFilesDialog({
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
+          onClick={() => fileInputRef.current?.click()}
           className={cn(
-            "relative border-2 border-dashed rounded-xl p-8 transition-all",
-            "flex flex-col items-center justify-center gap-4 text-center",
+            "relative border-2 border-dashed rounded-xl p-8 transition-all cursor-pointer",
+            "flex flex-col items-center justify-center gap-3 text-center",
             isDragging
               ? "border-primary bg-primary/5"
               : "border-border/60 hover:border-primary/40 hover:bg-muted/30"
           )}
         >
-          <div className="p-4 rounded-full bg-primary/10">
-            <Upload className="h-8 w-8 text-primary" />
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept={ACCEPTED_EXTENSIONS.join(",")}
+            onChange={(e) => {
+              if (e.target.files) addFiles(e.target.files);
+              e.target.value = "";
+            }}
+            className="hidden"
+          />
+          
+          <div className="p-3 rounded-full bg-primary/10">
+            <Upload className="h-6 w-6 text-primary" />
           </div>
           <div>
             <p className="font-medium text-foreground">
-              Drag & drop files here
+              Drag & drop or choose file to upload
             </p>
             <p className="text-sm text-muted-foreground mt-1">
-              PDF, TXT, Markdown, MP3, WAV (max 50MB)
+              PDF, TXT, Markdown, MP3, WAV • Max 50MB
             </p>
           </div>
-          <label>
-            <input
-              type="file"
-              multiple
-              accept=".pdf,.txt,.md,.mp3,.wav,application/pdf,text/plain,text/markdown,audio/mpeg,audio/wav"
-              onChange={(e) => e.target.files && addFiles(e.target.files)}
-              className="hidden"
-            />
-            <Button variant="outline" className="cursor-pointer" asChild>
-              <span>Browse files</span>
-            </Button>
-          </label>
         </div>
 
         {/* File list */}
         {files.length > 0 && (
-          <div className="max-h-48 overflow-y-auto space-y-2">
+          <div className="max-h-56 overflow-y-auto space-y-2 pr-1">
             {files.map((fileItem) => (
               <div
                 key={fileItem.id}
-                className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border/40"
+                className={cn(
+                  "flex items-center gap-3 p-3 rounded-lg border transition-colors",
+                  fileItem.status === "success" && "bg-green-500/5 border-green-500/20",
+                  fileItem.status === "error" && "bg-destructive/5 border-destructive/20",
+                  fileItem.status === "pending" && "bg-muted/50 border-border/40",
+                  fileItem.status === "uploading" && "bg-primary/5 border-primary/20"
+                )}
               >
-                <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                  {getFileIcon(fileItem.type)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {fileItem.file.name}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatFileSize(fileItem.file.size)}
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => removeFile(fileItem.id)}
-                  className="text-muted-foreground hover:text-destructive"
+                {/* Icon */}
+                <div
+                  className={cn(
+                    "p-2 rounded-lg",
+                    fileItem.status === "success" && "bg-green-500/10 text-green-600",
+                    fileItem.status === "error" && "bg-destructive/10 text-destructive",
+                    (fileItem.status === "pending" || fileItem.status === "uploading") && "bg-primary/10 text-primary"
+                  )}
                 >
-                  <X className="h-4 w-4" />
-                </Button>
+                  {fileItem.status === "success" ? (
+                    <CheckCircle2 className="h-4 w-4" />
+                  ) : fileItem.status === "error" ? (
+                    <AlertCircle className="h-4 w-4" />
+                  ) : fileItem.status === "uploading" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    getFileIcon(fileItem.type)
+                  )}
+                </div>
+
+                {/* File info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{fileItem.file.name}</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      {formatFileSize(fileItem.file.size)}
+                    </span>
+                    {fileItem.status === "error" && fileItem.error && (
+                      <span className="text-xs text-destructive truncate">
+                        • {fileItem.error}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Progress bar */}
+                  {fileItem.status === "uploading" && (
+                    <Progress value={fileItem.progress} className="h-1 mt-2" />
+                  )}
+                </div>
+
+                {/* Remove button */}
+                {fileItem.status !== "uploading" && (
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeFile(fileItem.id);
+                    }}
+                    className="text-muted-foreground hover:text-destructive shrink-0"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             ))}
           </div>
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={handleClose} disabled={isUploading}>
             Cancel
           </Button>
-          <Button
-            onClick={handleUpload}
-            disabled={files.length === 0 || isUploading}
-          >
+          <Button onClick={handleUpload} disabled={!canUpload}>
             {isUploading ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
                 Uploading...
               </>
             ) : (
-              `Upload ${files.length > 0 ? `(${files.length})` : ""}`
+              `Upload ${pendingFiles.length > 0 ? `${pendingFiles.length} file${pendingFiles.length > 1 ? "s" : ""}` : ""}`
             )}
           </Button>
         </DialogFooter>
