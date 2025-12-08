@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Upload, Link, ClipboardPaste } from "lucide-react";
+import { Upload, Link, Clipboard } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { UploadFilesDialog } from "./UploadFilesDialog";
 import { AddWebsiteDialog } from "./AddWebsiteDialog";
-import { PasteTextDialog } from "./PasteTextDialog";
+import { AddCopiedTextDialog } from "./AddCopiedTextDialog";
 import { cn } from "@/lib/utils";
 
 interface AddSourceDialogProps {
@@ -41,8 +41,8 @@ const sourceOptions: SourceOption[] = [
   },
   {
     id: "paste",
-    icon: <ClipboardPaste className="h-6 w-6" />,
-    label: "Paste Text",
+    icon: <Clipboard className="h-6 w-6" />,
+    label: "Paste Text - Copied Text",
     description: "Add copied content",
   },
 ];
@@ -138,7 +138,7 @@ export function AddSourceDialog({
         onSourceAdded={handleSourceAdded}
       />
 
-      <PasteTextDialog
+      <AddCopiedTextDialog
         open={activeDialog === "paste"}
         onOpenChange={(open) => !open && handleSubDialogClose()}
         projectId={projectId}
