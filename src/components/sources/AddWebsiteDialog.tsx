@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, Plus, X, Loader2, Globe } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -9,11 +9,9 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { cn } from "@/lib/utils";
-import { z } from "zod";
 
 interface AddWebsiteDialogProps {
   open: boolean;
@@ -22,13 +20,7 @@ interface AddWebsiteDialogProps {
   onSourceAdded?: () => void;
 }
 
-const urlSchema = z.string().url("Please enter a valid URL");
-
-interface UrlEntry {
-  id: string;
-  url: string;
-  error?: string;
-}
+const URL_REGEX = /^https?:\/\/.+/i;
 
 export function AddWebsiteDialog({
   open,
@@ -37,40 +29,19 @@ export function AddWebsiteDialog({
   onSourceAdded,
 }: AddWebsiteDialogProps) {
   const { toast } = useToast();
-  const [urls, setUrls] = useState<UrlEntry[]>([{ id: crypto.randomUUID(), url: "" }]);
+  const [textareaValue, setTextareaValue] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const validateUrl = (url: string): string | null => {
-    if (!url.trim()) return "URL is required";
-    try {
-      urlSchema.parse(url.startsWith("http") ? url : `https://${url}`);
-      return null;
-    } catch {
-      return "Please enter a valid URL";
-    }
-  };
-
-  const handleUrlChange = (id: string, value: string) => {
-    setUrls((prev) =>
-      prev.map((entry) =>
-        entry.id === id ? { ...entry, url: value, error: undefined } : entry
-      )
-    );
-  };
-
-  const addUrlField = () => {
-    setUrls((prev) => [...prev, { id: crypto.randomUUID(), url: "" }]);
-  };
-
-  const removeUrlField = (id: string) => {
-    if (urls.length > 1) {
-      setUrls((prev) => prev.filter((entry) => entry.id !== id));
-    }
-  };
+  const validUrls = useMemo(() => {
+    return textareaValue
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => URL_REGEX.test(line));
+  }, [textareaValue]);
 
   const extractDomain = (url: string): string => {
     try {
-      const urlObj = new URL(url.startsWith("http") ? url : `https://${url}`);
+      const urlObj = new URL(url);
       return urlObj.hostname.replace("www.", "");
     } catch {
       return url;
@@ -78,47 +49,46 @@ export function AddWebsiteDialog({
   };
 
   const handleSubmit = async () => {
-    // Validate all URLs
-    const validatedUrls = urls.map((entry) => ({
-      ...entry,
-      error: validateUrl(entry.url) || undefined,
-    }));
-
-    setUrls(validatedUrls);
-
-    const hasErrors = validatedUrls.some((entry) => entry.error);
-    if (hasErrors) return;
+    if (validUrls.length === 0) return;
 
     setIsSubmitting(true);
 
     try {
-      const validUrls = validatedUrls.filter((entry) => entry.url.trim());
+      let successCount = 0;
+      let errorCount = 0;
 
-      for (const entry of validUrls) {
-        const normalizedUrl = entry.url.startsWith("http")
-          ? entry.url
-          : `https://${entry.url}`;
-
+      for (const url of validUrls) {
         const { error } = await supabase.from("sources").insert({
           project_id: projectId,
-          title: extractDomain(normalizedUrl),
+          title: extractDomain(url),
           type: "website",
-          content: normalizedUrl,
+          content: url,
         });
 
         if (error) {
-          throw new Error(`Failed to add ${entry.url}: ${error.message}`);
+          console.error(`Failed to add ${url}:`, error.message);
+          errorCount++;
+        } else {
+          successCount++;
         }
       }
 
-      toast({
-        title: "Websites added",
-        description: `${validUrls.length} source${validUrls.length > 1 ? "s" : ""} added successfully`,
-      });
+      if (successCount > 0) {
+        toast({
+          title: "Websites added",
+          description: `${successCount} website${successCount > 1 ? "s" : ""} added${errorCount > 0 ? `, ${errorCount} failed` : ""}`,
+        });
 
-      setUrls([{ id: crypto.randomUUID(), url: "" }]);
-      onOpenChange(false);
-      onSourceAdded?.();
+        setTextareaValue("");
+        onOpenChange(false);
+        onSourceAdded?.();
+      } else {
+        toast({
+          title: "Failed to add websites",
+          description: "No websites could be added",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error("Error adding websites:", error);
       toast({
@@ -131,87 +101,45 @@ export function AddWebsiteDialog({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      if (index === urls.length - 1) {
-        addUrlField();
-      }
+  const handleClose = () => {
+    if (!isSubmitting) {
+      setTextareaValue("");
+      onOpenChange(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Globe className="h-5 w-5" />
-            Add website links
-          </DialogTitle>
+          <DialogTitle>Add Multiple Website URLs</DialogTitle>
           <DialogDescription>
-            Add one or more website URLs to use as sources.
+            Enter multiple website URLs, one per line. Each URL will be scraped as a separate source.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3 py-4 max-h-64 overflow-y-auto">
-          {urls.map((entry, index) => (
-            <div key={entry.id} className="flex items-start gap-2">
-              <div className="flex-1">
-                <div className="relative">
-                  <Link className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    value={entry.url}
-                    onChange={(e) => handleUrlChange(entry.id, e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(e, index)}
-                    placeholder="https://example.com"
-                    className={cn(
-                      "pl-10",
-                      entry.error && "border-destructive focus-visible:ring-destructive"
-                    )}
-                  />
-                </div>
-                {entry.error && (
-                  <p className="text-xs text-destructive mt-1">{entry.error}</p>
-                )}
-              </div>
-              {urls.length > 1 && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeUrlField(entry.id)}
-                  className="text-muted-foreground hover:text-destructive shrink-0"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          ))}
-        </div>
+        <Textarea
+          value={textareaValue}
+          onChange={(e) => setTextareaValue(e.target.value)}
+          placeholder={`Enter URLs one per line, for example:\nhttps://example.com\nhttps://another-site.com\nhttps://third-website.org`}
+          className="min-h-[150px] font-mono text-sm resize-none"
+        />
 
-        <Button
-          variant="outline"
-          onClick={addUrlField}
-          className="w-full gap-2 border-dashed"
-        >
-          <Plus className="h-4 w-4" />
-          Add another URL
-        </Button>
-
-        <DialogFooter className="mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter>
+          <Button variant="outline" onClick={handleClose} disabled={isSubmitting}>
             Cancel
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting || urls.every((u) => !u.url.trim())}
+            disabled={validUrls.length === 0 || isSubmitting}
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
                 Adding...
               </>
             ) : (
-              "Add websites"
+              `Add ${validUrls.length} Website${validUrls.length !== 1 ? "s" : ""}`
             )}
           </Button>
         </DialogFooter>
