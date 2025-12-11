@@ -24,13 +24,24 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AddSourceDialog } from "@/components/sources";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import { AddSourceDialog, RenameSourceDialog } from "@/components/sources";
+import { SourceContentViewer } from "@/components/sources";
+import { useSourceDelete } from "@/hooks/useSourceDelete";
 import { cn } from "@/lib/utils";
 
 export interface Source {
   id: string;
   title: string;
   type: "pdf" | "text" | "youtube" | "website" | "audio" | "image";
+  content?: string;
+  summary?: string;
+  url?: string;
 }
 
 interface SourcePanelProps {
@@ -38,6 +49,8 @@ interface SourcePanelProps {
   onRemoveSource: (sourceId: string) => void;
   onSelectSource: (sourceId: string) => void;
   selectedSourceId?: string;
+  selectedSourceForViewing?: Source | null;
+  onSourceViewerChange?: (source: Source | null) => void;
   projectId: string;
   onSourceAdded?: () => void;
 }
@@ -59,12 +72,49 @@ export function SourcePanel({
   onRemoveSource,
   onSelectSource,
   selectedSourceId,
+  selectedSourceForViewing: propSelectedSourceForViewing,
+  onSourceViewerChange,
   projectId,
   onSourceAdded,
 }: SourcePanelProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [deleteSourceId, setDeleteSourceId] = useState<string | null>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [selectedSourceForViewing, setSelectedSourceForViewing] = useState<Source | null>(
+    propSelectedSourceForViewing || null
+  );
+  const [showRenameDialog, setShowRenameDialog] = useState(false);
+  const [selectedSourceForRename, setSelectedSourceForRename] = useState<Source | null>(null);
+  const { deleteSource, isDeletingSource } = useSourceDelete();
+
+  // Sync with parent prop
+  const activeSourceForViewing = propSelectedSourceForViewing !== undefined ? propSelectedSourceForViewing : selectedSourceForViewing;
+
+  const handleSourceClick = (source: Source) => {
+    setSelectedSourceForViewing(source);
+    onSourceViewerChange?.(source);
+  };
+
+  const handleRenameSource = (source: Source) => {
+    setSelectedSourceForRename(source);
+    setShowRenameDialog(true);
+  };
+
+  const handleRemoveSource = (sourceId: string) => {
+    setDeleteSourceId(sourceId);
+  };
+
+  const confirmDelete = () => {
+    if (deleteSourceId) {
+      deleteSource(deleteSourceId);
+      setDeleteSourceId(null);
+    }
+  };
+
+  const handleBackToSources = () => {
+    setSelectedSourceForViewing(null);
+    onSourceViewerChange?.(null);
+  };
 
   return (
     <>
@@ -76,8 +126,20 @@ export function SourcePanel({
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
         className="relative shrink-0 bg-background border-r border-border/60 dark:border-border/40 flex flex-col"
       >
-        {/* Header with Collapse Button */}
-        <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-border/50">
+        {/* Show source content viewer if a source is selected for viewing */}
+        {activeSourceForViewing ? (
+          <SourceContentViewer
+            sourceTitle={activeSourceForViewing.title}
+            sourceContent={activeSourceForViewing.content || "No content available"}
+            sourceSummary={activeSourceForViewing.summary}
+            sourceUrl={activeSourceForViewing.url}
+            sourceType={activeSourceForViewing.type}
+            onClose={handleBackToSources}
+          />
+        ) : (
+          <>
+            {/* Header with Collapse Button */}
+            <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-border/50">
           {!isCollapsed && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -117,51 +179,66 @@ export function SourcePanel({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.2 }}
-                    onClick={() => onSelectSource(source.id)}
-                    className={cn(
-                      "group relative flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all",
-                      "hover:bg-muted/50 hover:shadow-sm",
-                      selectedSourceId === source.id
-                        ? "bg-primary/10 border border-primary/20 shadow-sm"
-                        : "bg-background border border-border/40"
-                    )}
                   >
-                    <div
-                      className={cn(
-                        "flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
-                        selectedSourceId === source.id
-                          ? "bg-primary/20 text-primary"
-                          : "bg-muted text-muted-foreground group-hover:bg-muted/80"
-                      )}
-                    >
-                      {getSourceIcon(source.type)}
-                    </div>
+                    <ContextMenu>
+                      <ContextMenuTrigger asChild>
+                        <div
+                          onClick={() => handleSourceClick(source)}
+                          className={cn(
+                            "group relative flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all",
+                            "hover:bg-muted/50 hover:shadow-sm",
+                            selectedSourceId === source.id
+                              ? "bg-primary/10 border border-primary/20 shadow-sm"
+                              : "bg-background border border-border/40"
+                          )}
+                        >
+                          <div
+                            className={cn(
+                              "flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
+                              selectedSourceId === source.id
+                                ? "bg-primary/20 text-primary"
+                                : "bg-muted text-muted-foreground group-hover:bg-muted/80"
+                            )}
+                          >
+                            {getSourceIcon(source.type)}
+                          </div>
 
-                    <span
-                      className={cn(
-                        "flex-1 text-sm font-medium truncate transition-colors",
-                        selectedSourceId === source.id
-                          ? "text-primary"
-                          : "text-foreground"
-                      )}
-                    >
-                      {source.title}
-                    </span>
+                          <span
+                            className={cn(
+                              "flex-1 text-sm font-medium truncate transition-colors",
+                              selectedSourceId === source.id
+                                ? "text-primary"
+                                : "text-foreground"
+                            )}
+                          >
+                            {source.title}
+                          </span>
 
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleteSourceId(source.id);
-                      }}
-                      className={cn(
-                        "opacity-0 group-hover:opacity-100 transition-opacity shrink-0",
-                        "h-6 w-6 text-muted-foreground hover:text-destructive"
-                      )}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveSource(source.id);
+                            }}
+                            className={cn(
+                              "opacity-0 group-hover:opacity-100 transition-opacity shrink-0",
+                              "h-6 w-6 text-muted-foreground hover:text-destructive"
+                            )}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </ContextMenuTrigger>
+                      <ContextMenuContent>
+                        <ContextMenuItem onClick={() => handleRenameSource(source)}>
+                          Rename
+                        </ContextMenuItem>
+                        <ContextMenuItem onClick={() => handleRemoveSource(source.id)}>
+                          Delete
+                        </ContextMenuItem>
+                      </ContextMenuContent>
+                    </ContextMenu>
                   </motion.div>
                 ))}
               </AnimatePresence>
@@ -195,6 +272,8 @@ export function SourcePanel({
             </Button>
           </div>
         )}
+            </>
+          )}
       </motion.div>
 
       <AlertDialog
@@ -212,18 +291,20 @@ export function SourcePanel({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
-                if (deleteSourceId) {
-                  onRemoveSource(deleteSourceId);
-                  setDeleteSourceId(null);
-                }
-              }}
+              onClick={confirmDelete}
+              disabled={isDeletingSource}
             >
-              Remove
+              {isDeletingSource ? "Removing..." : "Remove"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <RenameSourceDialog
+        open={showRenameDialog}
+        onOpenChange={setShowRenameDialog}
+        source={selectedSourceForRename}
+      />
 
       <AddSourceDialog
         open={addDialogOpen}

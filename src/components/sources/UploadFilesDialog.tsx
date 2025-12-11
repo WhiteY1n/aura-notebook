@@ -13,6 +13,10 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { useSources } from "@/hooks/useSources";
+import { useFileUpload } from "@/hooks/useFileUpload";
+import { useDocumentProcessing } from "@/hooks/useDocumentProcessing";
+import { useNotebookGeneration } from "@/hooks/useNotebookGeneration";
 
 interface UploadFilesDialogProps {
   open: boolean;
@@ -80,6 +84,11 @@ export function UploadFilesDialog({
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const { addSourceAsync, updateSource } = useSources(projectId);
+  const { uploadFile } = useFileUpload();
+  const { processDocumentAsync } = useDocumentProcessing();
+  const { generateNotebookContentAsync } = useNotebookGeneration();
 
   const validateFile = useCallback((file: File): { valid: boolean; type?: "pdf" | "text" | "audio"; error?: string } => {
     // Check by MIME type first
@@ -171,77 +180,154 @@ export function UploadFilesDialog({
     );
   };
 
-  const handleUpload = async () => {
-    if (!user || files.length === 0) return;
+  const processFileAsync = async (file: File, sourceId: string, notebookId: string, fileItemId: string) => {
+    try {
+      console.log('Starting file processing for:', file.name, 'source:', sourceId);
+      const fileType = file.type.includes('pdf') ? 'pdf' : file.type.includes('audio') ? 'audio' : 'text';
 
+      // Update status to uploading
+      updateFileStatus(fileItemId, { status: "uploading", progress: 30 });
+
+      // Upload the file
+      const filePath = await uploadFile(file, notebookId, sourceId);
+      if (!filePath) {
+        throw new Error('File upload failed - no file path returned');
+      }
+      console.log('File uploaded successfully:', filePath);
+
+      updateFileStatus(fileItemId, { progress: 60 });
+
+      // Update with file path and set to processing
+      updateSource({
+        sourceId,
+        updates: {
+          file_path: filePath,
+          processing_status: 'processing'
+        }
+      });
+
+      updateFileStatus(fileItemId, { progress: 80 });
+
+      // Start document processing
+      try {
+        await processDocumentAsync({
+          sourceId,
+          filePath,
+          sourceType: fileType
+        });
+
+        // Generate notebook content
+        await generateNotebookContentAsync({
+          notebookId,
+          filePath,
+          sourceType: fileType
+        });
+        console.log('Document processing completed for:', sourceId);
+      } catch (processingError) {
+        console.error('Document processing failed:', processingError);
+
+        // Update to completed with basic info if processing fails
+        updateSource({
+          sourceId,
+          updates: {
+            processing_status: 'completed'
+          }
+        });
+      }
+
+      updateFileStatus(fileItemId, { status: "success", progress: 100 });
+    } catch (error) {
+      console.error('File processing failed for:', file.name, error);
+      updateFileStatus(fileItemId, {
+        status: "error",
+        progress: 0,
+        error: error instanceof Error ? error.message : "Upload failed",
+      });
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!projectId || files.length === 0) return;
+
+    console.log('Processing multiple files:', files.length);
     setIsUploading(true);
     let successCount = 0;
     let errorCount = 0;
 
-    for (const fileItem of files) {
-      if (fileItem.status === "success") {
+    try {
+      // Step 1: Create the first source immediately
+      const firstFile = files[0];
+      if (firstFile.status === "success") {
         successCount++;
-        continue;
-      }
-
-      updateFileStatus(fileItem.id, { status: "uploading", progress: 0 });
-
-      try {
-        const filePath = `${user.id}/${projectId}/${crypto.randomUUID()}-${fileItem.file.name}`;
-
-        // Simulate progress updates
-        const progressInterval = setInterval(() => {
-          setFiles((prev) =>
-            prev.map((f) =>
-              f.id === fileItem.id && f.status === "uploading" && f.progress < 90
-                ? { ...f, progress: f.progress + 10 }
-                : f
-            )
-          );
-        }, 100);
-
-        // Upload to storage
-        const { error: uploadError } = await supabase.storage
-          .from("project-files")
-          .upload(filePath, fileItem.file);
-
-        clearInterval(progressInterval);
-
-        if (uploadError) {
-          throw new Error(uploadError.message);
-        }
-
-        updateFileStatus(fileItem.id, { progress: 95 });
-
-        // Get public URL
-        const { data: urlData } = supabase.storage
-          .from("project-files")
-          .getPublicUrl(filePath);
-
-        // Create source record
-        const { error: sourceError } = await supabase.from("sources").insert({
-          project_id: projectId,
-          title: fileItem.file.name,
-          type: fileItem.type,
-          file_url: urlData.publicUrl,
-          file_size: fileItem.file.size,
-        });
-
-        if (sourceError) {
-          throw new Error(sourceError.message);
-        }
-
-        updateFileStatus(fileItem.id, { status: "success", progress: 100 });
+      } else {
+        updateFileStatus(firstFile.id, { status: "uploading", progress: 10 });
+        
+        const firstFileType = firstFile.type;
+        const firstSourceData = {
+          notebookId: projectId,
+          title: firstFile.file.name,
+          type: firstFileType as 'pdf' | 'text' | 'website' | 'youtube' | 'audio',
+          file_size: firstFile.file.size,
+          processing_status: 'pending' as const,
+          metadata: {
+            fileName: firstFile.file.name,
+            fileType: firstFile.file.type
+          }
+        };
+        
+        console.log('Creating first source for:', firstFile.file.name);
+        const firstSource = await addSourceAsync(firstSourceData);
+        
+        // Process first file
+        await processFileAsync(firstFile.file, firstSource.id, projectId, firstFile.id);
         successCount++;
-      } catch (error) {
-        console.error("Upload error:", error);
-        updateFileStatus(fileItem.id, {
-          status: "error",
-          progress: 0,
-          error: error instanceof Error ? error.message : "Upload failed",
-        });
-        errorCount++;
       }
+      
+      // Step 2: If there are more files, add a delay before creating the rest
+      if (files.length > 1) {
+        console.log('Adding 150ms delay before creating remaining sources...');
+        await new Promise(resolve => setTimeout(resolve, 150));
+        
+        // Create and process remaining sources
+        for (let i = 1; i < files.length; i++) {
+          const fileItem = files[i];
+          if (fileItem.status === "success") {
+            successCount++;
+            continue;
+          }
+
+          try {
+            updateFileStatus(fileItem.id, { status: "uploading", progress: 10 });
+            
+            const sourceData = {
+              notebookId: projectId,
+              title: fileItem.file.name,
+              type: fileItem.type as 'pdf' | 'text' | 'website' | 'youtube' | 'audio',
+              file_size: fileItem.file.size,
+              processing_status: 'pending' as const,
+              metadata: {
+                fileName: fileItem.file.name,
+                fileType: fileItem.file.type
+              }
+            };
+            
+            const source = await addSourceAsync(sourceData);
+            await processFileAsync(fileItem.file, source.id, projectId, fileItem.id);
+            successCount++;
+          } catch (error) {
+            console.error('Failed to process file:', fileItem.file.name, error);
+            updateFileStatus(fileItem.id, {
+              status: "error",
+              progress: 0,
+              error: error instanceof Error ? error.message : "Upload failed",
+            });
+            errorCount++;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      errorCount++;
     }
 
     setIsUploading(false);

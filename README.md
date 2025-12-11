@@ -54,11 +54,37 @@ npm run dev
 
 This project is built with:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- **Frontend**: Vite, TypeScript, React, shadcn-ui, Tailwind CSS
+- **Backend**: Supabase (Database, Authentication, Storage, Edge Functions)
+- **AI Features**: n8n workflows, OpenAI API (optional)
+- **Vector Search**: Supabase Vector Store (optional)
+
+## AI Features Setup (Optional)
+
+Aura Study can work in two modes:
+
+### Simple Mode (Current - Default)
+- ✅ File upload and management
+- ✅ Basic chat functionality
+- ✅ Notes and flashcards
+- ✅ File-based titles and icons
+- ❌ No AI-generated content
+- ❌ No semantic search
+
+### Full AI Mode (Requires n8n)
+- ✅ All Simple Mode features
+- ✅ AI-generated titles and descriptions
+- ✅ Smart document summaries
+- ✅ Example questions generation
+- ✅ Vector-based semantic search
+- ✅ Citation-aware responses
+
+**To enable Full AI Mode:**
+1. Follow the guide: [N8N_SETUP_GUIDE.md](./N8N_SETUP_GUIDE.md)
+2. Or quick start: [N8N_QUICK_START.md](./N8N_QUICK_START.md)
+
+**Estimated setup time**: 15-20 minutes  
+**Monthly cost**: $1-5 (for typical usage)
 
 ## How can I deploy this project?
 

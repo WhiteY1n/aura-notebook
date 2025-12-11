@@ -28,15 +28,64 @@ serve(async (req) => {
     const webServiceUrl = Deno.env.get('NOTEBOOK_GENERATION_URL')
     const authHeader = Deno.env.get('NOTEBOOK_GENERATION_AUTH')
 
+    // If no web service configured, use simple generation
     if (!webServiceUrl || !authHeader) {
-      console.error('Missing environment variables:', {
-        hasUrl: !!webServiceUrl,
-        hasAuth: !!authHeader
-      })
+      console.log('No web service configured, using simple title generation')
       
+      // Simple title generation based on source type and file path
+      let title = 'Untitled notebook';
+      let description = 'This notebook contains your uploaded source. Chat with it to learn more!';
+      let notebookIcon = '📝';
+      let backgroundColor = 'bg-blue-100';
+      
+      if (filePath) {
+        // Extract filename from path
+        const fileName = filePath.split('/').pop() || 'document';
+        title = fileName.replace(/\.[^/.]+$/, ''); // Remove extension
+        
+        // Set icon based on source type
+        if (sourceType === 'pdf') {
+          notebookIcon = '📄';
+          description = `This notebook contains the PDF document: ${fileName}`;
+        } else if (sourceType === 'audio') {
+          notebookIcon = '🎵';
+          description = `This notebook contains the audio file: ${fileName}`;
+        } else if (sourceType === 'text') {
+          notebookIcon = '📝';
+          description = `This notebook contains your text content.`;
+        }
+      }
+      
+      // Update notebook with simple generated content
+      const { error: notebookError } = await supabaseClient
+        .from('notebooks')
+        .update({
+          title: title,
+          description: description,
+          icon: notebookIcon,
+          color: backgroundColor,
+          generation_status: 'completed'
+        })
+        .eq('id', notebookId)
+
+      if (notebookError) {
+        console.error('Notebook update error:', notebookError)
+        return new Response(
+          JSON.stringify({ error: 'Failed to update notebook' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
       return new Response(
-        JSON.stringify({ error: 'Web service configuration missing' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          success: true, 
+          title, 
+          description,
+          icon: notebookIcon,
+          color: backgroundColor,
+          message: 'Notebook content generated (simple mode)' 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 

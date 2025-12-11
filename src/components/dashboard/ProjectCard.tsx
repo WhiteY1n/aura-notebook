@@ -27,6 +27,7 @@ export interface Project {
   title: string;
   lastUpdated: string;
   sourcesCount: number;
+  icon?: string;
   thumbnail?: string;
 }
 
@@ -131,17 +132,17 @@ export function ProjectCard({ project, layout, onRename, onDelete }: ProjectCard
             transition={{ type: "spring", stiffness: 400, damping: 17 }}
           >
             <Card variant="interactive" className="flex items-center gap-4 p-4">
-              <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center flex-shrink-0">
-                <FileText className="h-6 w-6 text-primary" />
+              <div className="h-12 w-12 flex items-center justify-center flex-shrink-0">
+                <span className="text-3xl leading-none">{project.icon || '📝'}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-foreground truncate">{project.title}</h3>
+                <h3 className="text-lg font-normal text-foreground truncate">{project.title}</h3>
                 <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Clock className="h-3.5 w-3.5" />
                     {project.lastUpdated}
                   </span>
-                  <Badge variant="secondary" className="text-xs">{project.sourcesCount} sources</Badge>
+                  <span>{project.sourcesCount} source{project.sourcesCount !== 1 ? 's' : ''}</span>
                 </div>
               </div>
               {MenuButton}
@@ -161,21 +162,26 @@ export function ProjectCard({ project, layout, onRename, onDelete }: ProjectCard
           whileTap={{ scale: 0.98 }}
           transition={{ type: "spring", stiffness: 400, damping: 17 }}
         >
-          <Card variant="interactive" className="group relative overflow-hidden">
-            {/* Thumbnail */}
-            <div className="h-32 bg-gradient-to-br from-primary/10 via-accent/10 to-primary/5 flex items-center justify-center">
-              <FileText className="h-12 w-12 text-primary/40" />
-            </div>
-
+          <Card variant="interactive" className="group relative overflow-hidden h-48">
             {/* Content */}
-            <div className="p-4">
-              <h3 className="font-medium text-foreground truncate">{project.title}</h3>
-              <div className="flex items-center justify-between mt-2">
-                <span className="flex items-center gap-1 text-sm text-muted-foreground">
+            <div className="p-4 h-full flex flex-col">
+              {/* Icon */}
+              <div className="mb-4">
+                <span className="text-3xl leading-none">{project.icon || '📝'}</span>
+              </div>
+              
+              {/* Title */}
+              <h3 className="text-xl font-normal text-foreground line-clamp-2 flex-grow mb-2">
+                {project.title}
+              </h3>
+              
+              {/* Footer */}
+              <div className="flex items-center justify-between text-sm text-muted-foreground mt-auto">
+                <span className="flex items-center gap-1">
                   <Clock className="h-3.5 w-3.5" />
                   {project.lastUpdated}
                 </span>
-                <Badge variant="secondary" className="text-xs">{project.sourcesCount} sources</Badge>
+                <span>{project.sourcesCount} source{project.sourcesCount !== 1 ? 's' : ''}</span>
               </div>
             </div>
 

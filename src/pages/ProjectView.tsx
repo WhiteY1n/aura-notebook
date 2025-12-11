@@ -29,9 +29,10 @@ export default function ProjectView() {
   const { notebooks, isLoading: notebooksLoading } = useNotebooks();
   const { sources: sourcesData, isLoading: sourcesLoading } = useSources(id);
   const { deleteSource } = useSourceDelete();
-  const { messages: chatMessages, sendMessage, isSending } = useChatMessages(id);
+  const { messages: chatMessages, sendMessage, isSending, deleteChatHistory, isDeletingChatHistory } = useChatMessages(id);
   
   const [selectedSourceId, setSelectedSourceId] = useState<string | undefined>();
+  const [selectedSourceForViewing, setSelectedSourceForViewing] = useState<Source | null>(null);
   const [generatedItems, setGeneratedItems] = useState<GeneratedItem[]>(mockGeneratedItems);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
 
@@ -42,26 +43,19 @@ export default function ProjectView() {
     id: s.id,
     title: s.title,
     type: s.type as Source["type"],
+    content: s.content,
+    summary: s.summary,
+    url: s.url,
   }));
 
   // Transform chat messages to Message format for ChatPanel
   const messages: Message[] = (chatMessages || []).map((msg, index) => {
     const isUser = msg.message.type === 'human';
-    let content = '';
     
-    if (typeof msg.message.content === 'string') {
-      content = msg.message.content;
-    } else if (msg.message.content?.segments) {
-      // AI message with citations
-      content = msg.message.content.segments
-        .map(seg => seg.text)
-        .join('');
-    }
-
     return {
       id: msg.id?.toString() || index.toString(),
       role: isUser ? 'user' : 'assistant',
-      content,
+      content: msg.message.content, // Pass full content (string or object with segments/citations)
       timestamp: new Date().toLocaleTimeString([], {
         hour: '2-digit',
         minute: '2-digit',
@@ -69,10 +63,10 @@ export default function ProjectView() {
     };
   });
 
-  // Handle notebook not found - but give some time for real-time updates to arrive
+  // Handle notebook not found - but give more time for real-time updates to arrive
   useEffect(() => {
     if (!notebooksLoading && !project && id) {
-      // Wait a bit for real-time subscription to update
+      // Wait longer for real-time subscription to update (especially for new notebooks)
       const timeoutId = setTimeout(() => {
         // Check again if project still doesn't exist
         const currentProject = notebooks?.find(nb => nb.id === id);
@@ -84,7 +78,7 @@ export default function ProjectView() {
           });
           navigate("/dashboard");
         }
-      }, 500);
+      }, 2000); // Increased to 2 seconds to allow for real-time updates
       
       return () => clearTimeout(timeoutId);
     }
@@ -145,6 +139,20 @@ export default function ProjectView() {
     setGeneratedItems((prev) => prev.filter((item) => item.id !== itemId));
   };
 
+  const handleClearChat = async () => {
+    if (!id) return;
+    deleteChatHistory(id);
+  };
+
+  const handleCitationClick = (citation: any) => {
+    // Find the source by source_id from citation
+    const source = sources.find(s => s.id === citation.source_id);
+    if (source) {
+      setSelectedSourceId(source.id);
+      setSelectedSourceForViewing(source); // Open source viewer directly
+    }
+  };
+
   const hasSources = sources.length > 0;
 
   return (
@@ -197,6 +205,8 @@ export default function ProjectView() {
           onRemoveSource={handleRemoveSource}
           onSelectSource={handleSelectSource}
           selectedSourceId={selectedSourceId}
+          selectedSourceForViewing={selectedSourceForViewing}
+          onSourceViewerChange={setSelectedSourceForViewing}
           projectId={id || ""}
           onSourceAdded={handleSourceAdded}
         />
@@ -247,6 +257,17 @@ export default function ProjectView() {
               isTyping={isSending}
               onSendMessage={handleSendMessage}
               exampleQuestions={project?.example_questions || []}
+              onClearChat={handleClearChat}
+              isDeletingChatHistory={isDeletingChatHistory}
+              onCitationClick={handleCitationClick}
+              notebookId={id}
+              notebook={{
+                title: project?.title,
+                description: project?.description,
+                icon: project?.icon,
+                generation_status: project?.generation_status,
+              }}
+              sourceCount={sources.length}
             />
           )}
         </div>
@@ -254,6 +275,9 @@ export default function ProjectView() {
         {/* Studio Panel (Desktop) */}
         <StudioPanel
           projectId={id || ""}
+          notebookId={id || ""}
+          onAddNote={() => {}}
+          onCitationClick={handleCitationClick}
           generatedItems={generatedItems}
           onDeleteItem={handleDeleteGeneratedItem}
         />
@@ -261,6 +285,9 @@ export default function ProjectView() {
         {/* Studio Sheet (Mobile) */}
         <StudioSheet
           projectId={id || ""}
+          notebookId={id || ""}
+          onAddNote={() => {}}
+          onCitationClick={handleCitationClick}
           generatedItems={generatedItems}
           onDeleteItem={handleDeleteGeneratedItem}
         />

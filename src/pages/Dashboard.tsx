@@ -34,6 +34,7 @@ export default function Dashboard() {
     return (notebooks || []).map((nb) => ({
       id: nb.id,
       title: nb.title,
+      icon: nb.icon || '📝',
       lastUpdated: formatRelativeTime(new Date(nb.updated_at)),
       sourcesCount: nb.sources?.[0]?.count || 0,
       createdAt: new Date(nb.created_at),
@@ -61,7 +62,10 @@ export default function Dashboard() {
         description: "",
       },
       {
-        onSuccess: (newNotebook) => {
+        onSuccess: async (newNotebook) => {
+          console.log('Notebook created:', newNotebook.id);
+          // Wait a bit for the query to refetch
+          await new Promise(resolve => setTimeout(resolve, 500));
           console.log('Navigating to notebook:', newNotebook.id);
           navigate(`/project/${newNotebook.id}`);
         },

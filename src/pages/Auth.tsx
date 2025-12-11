@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { z } from "zod";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,7 +22,7 @@ const signUpSchema = loginSchema.extend({
 
 export default function Auth() {
   const navigate = useNavigate();
-  const { user, signIn, signUp, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   
   const [isLogin, setIsLogin] = useState(true);
@@ -70,12 +71,25 @@ export default function Auth() {
     
     try {
       if (isLogin) {
-        const { error } = await signIn(email, password);
+        console.log('Attempting sign in for:', email);
+        
+        const { error, data } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        
         if (error) {
-          if (error.message.includes("Invalid login credentials")) {
+          console.error('Sign in error:', error);
+          if (error.message.includes('Invalid login credentials')) {
             toast({
               title: "Login failed",
               description: "Invalid email or password. Please try again.",
+              variant: "destructive",
+            });
+          } else if (error.message.includes('Email not confirmed')) {
+            toast({
+              title: "Email not confirmed",
+              description: "Please check your email and click the confirmation link.",
               variant: "destructive",
             });
           } else {
@@ -86,15 +100,29 @@ export default function Auth() {
             });
           }
         } else {
+          console.log('Sign in successful:', data.user?.email);
           toast({
             title: "Welcome back!",
             description: "You've successfully signed in.",
           });
+          // Navigation will be handled by AuthContext
         }
       } else {
-        const { error } = await signUp(email, password, fullName || undefined);
+        console.log('Attempting sign up for:', email);
+        
+        const { error, data } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName || undefined,
+            },
+          },
+        });
+        
         if (error) {
-          if (error.message.includes("User already registered")) {
+          console.error('Sign up error:', error);
+          if (error.message.includes('User already registered')) {
             toast({
               title: "Account exists",
               description: "This email is already registered. Please sign in instead.",
@@ -108,12 +136,21 @@ export default function Auth() {
             });
           }
         } else {
+          console.log('Sign up successful:', data.user?.email);
           toast({
             title: "Account created!",
-            description: "Welcome to the platform. You're now signed in.",
+            description: "Welcome! You're now signed in.",
           });
+          // Navigation will be handled by AuthContext
         }
       }
+    } catch (err) {
+      console.error('Auth form error:', err);
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "An unexpected error occurred",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }

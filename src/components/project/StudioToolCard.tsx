@@ -85,7 +85,7 @@ export function StudioToolCard({ type, projectId, generatedCount, onEdit }: Stud
         whileHover={{ scale: 1.02, y: -2 }}
         whileTap={{ scale: 0.98 }}
         transition={{ type: "spring", stiffness: 400, damping: 17 }}
-        className="group relative bg-studio-card border border-studio-border rounded-xl p-4 hover:shadow-soft transition-shadow cursor-pointer"
+        className="group relative bg-studio-card border border-studio-border rounded-lg p-3 hover:shadow-soft transition-shadow cursor-pointer"
       >
         {/* Edit button */}
         {onEdit && (
@@ -96,29 +96,19 @@ export function StudioToolCard({ type, projectId, generatedCount, onEdit }: Stud
               e.preventDefault();
               onEdit();
             }}
-            className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+            className="absolute top-1.5 right-1.5 h-6 w-6 opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
           >
-            <Pencil className="h-3.5 w-3.5" />
+            <Pencil className="h-3 w-3" />
           </Button>
         )}
 
         {/* Icon */}
-        <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center mb-3", config.bgClass)}>
-          <Icon className={cn("h-5 w-5", config.colorClass)} />
+        <div className={cn("h-8 w-8 rounded-md flex items-center justify-center mb-2", config.bgClass)}>
+          <Icon className={cn("h-4 w-4", config.colorClass)} />
         </div>
 
         {/* Content */}
-        <h3 className="font-medium text-foreground mb-0.5">{config.label}</h3>
-        <p className="text-xs text-muted-foreground">{config.description}</p>
-
-        {/* Count badge */}
-        {generatedCount !== undefined && generatedCount > 0 && (
-          <div className="mt-2">
-            <span className={cn("text-xs px-2 py-0.5 rounded-full", config.bgClass, config.colorClass)}>
-              {generatedCount} generated
-            </span>
-          </div>
-        )}
+        <h3 className="font-medium text-foreground text-sm">{config.label}</h3>
       </motion.div>
     </Link>
   );
