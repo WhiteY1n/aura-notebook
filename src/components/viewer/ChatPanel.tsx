@@ -46,6 +46,9 @@ interface ChatPanelProps {
     generation_status?: string;
   };
   sourceCount?: number;
+  pendingUserMessage?: string | null;
+  showAiLoading?: boolean;
+  onQuestionClick?: (question: string) => void;
 }
 
 export function ChatPanel({
@@ -60,6 +63,9 @@ export function ChatPanel({
   notebookId,
   notebook,
   sourceCount = 0,
+  pendingUserMessage = null,
+  showAiLoading = false,
+  onQuestionClick,
 }: ChatPanelProps) {
   const latestMessageRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -79,7 +85,7 @@ export function ChatPanel({
         }, 50);
       }
     }
-  }, [messages.length, isTyping]);
+  }, [messages.length, isTyping, pendingUserMessage, showAiLoading]);
   return (
     <div className="flex flex-col h-full min-w-0 border-l border-border/60 dark:border-border/40 shadow-inner">
       {/* Header with Clear Chat button */}
@@ -172,7 +178,7 @@ export function ChatPanel({
           )}
 
           {/* Chat Messages or Empty State */}
-          {messages.length === 0 ? (
+          {messages.length === 0 && !pendingUserMessage && !showAiLoading ? (
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -194,7 +200,44 @@ export function ChatPanel({
             {messages.map((message) => (
               <ChatMessageWithSave key={message.id} message={message} onCitationClick={onCitationClick} notebookId={notebookId} />
             ))}
-            {isTyping && <TypingIndicator />}
+            {/* Pending user message */}
+            {pendingUserMessage && (
+              <div className="flex justify-end">
+                <Card className="max-w-xs lg:max-w-md rounded-lg shadow-sm bg-primary text-primary-foreground">
+                  <div className="px-4 py-2">
+                    <div className="text-sm leading-relaxed">
+                      <MarkdownRenderer 
+                        content={pendingUserMessage} 
+                        isUserMessage={true}
+                      />
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            )}
+            {/* AI Loading Indicator */}
+            {showAiLoading && (
+              <div className="flex justify-start">
+                <div className="flex items-center gap-1.5 px-4 py-3 bg-muted rounded-lg">
+                  <motion.span
+                    className="w-2 h-2 rounded-full bg-muted-foreground"
+                    animate={{ y: [0, -4, 0] }}
+                    transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                  />
+                  <motion.span
+                    className="w-2 h-2 rounded-full bg-muted-foreground"
+                    animate={{ y: [0, -4, 0] }}
+                    transition={{ duration: 0.6, repeat: Infinity, delay: 0.1 }}
+                  />
+                  <motion.span
+                    className="w-2 h-2 rounded-full bg-muted-foreground"
+                    animate={{ y: [0, -4, 0] }}
+                    transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                  />
+                </div>
+              </div>
+            )}
+            {/* Scroll target */}
             <div ref={latestMessageRef} />
           </div>
           )}
@@ -205,8 +248,11 @@ export function ChatPanel({
       <div className="flex-shrink-0 bg-background border-t border-border/60 dark:border-border/40">
         <ChatInput 
           onSend={onSendMessage} 
-          disabled={disabled || isTyping}
+          disabled={disabled || isTyping || !!pendingUserMessage}
           exampleQuestions={exampleQuestions}
+          pendingUserMessage={pendingUserMessage}
+          showAiLoading={showAiLoading}
+          onQuestionClick={onQuestionClick}
         />
       </div>
     </div>

@@ -14,6 +14,7 @@ import { useSourceDelete } from "@/hooks/useSourceDelete";
 import { useChatMessages } from "@/hooks/useChatMessages";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
+import { useQueryClient } from "@tanstack/react-query";
 
 const mockGeneratedItems: GeneratedItem[] = [
   { id: "1", title: "ML Concepts Flashcards", type: "flashcards", createdAt: "Today" },
@@ -25,6 +26,7 @@ export default function ProjectView() {
   const navigate = useNavigate();
   const { setTheme, isDark } = useTheme();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const { notebooks, isLoading: notebooksLoading } = useNotebooks();
   const { sources: sourcesData, isLoading: sourcesLoading } = useSources(id);
@@ -35,6 +37,9 @@ export default function ProjectView() {
   const [selectedSourceForViewing, setSelectedSourceForViewing] = useState<Source | null>(null);
   const [generatedItems, setGeneratedItems] = useState<GeneratedItem[]>(mockGeneratedItems);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [pendingUserMessage, setPendingUserMessage] = useState<string | null>(null);
+  const [showAiLoading, setShowAiLoading] = useState(false);
+  const [clickedQuestions, setClickedQuestions] = useState<Set<string>>(new Set());
 
   const project = notebooks?.find(nb => nb.id === id);
   const isLoading = notebooksLoading || sourcesLoading;
@@ -46,6 +51,7 @@ export default function ProjectView() {
     content: s.content,
     summary: s.summary,
     url: s.url,
+    processing_status: s.processing_status,
   }));
 
   // Transform chat messages to Message format for ChatPanel
@@ -62,6 +68,18 @@ export default function ProjectView() {
       }),
     };
   });
+
+  // Track message count to clear pending message when new messages arrive
+  const [lastMessageCount, setLastMessageCount] = useState(0);
+  
+  useEffect(() => {
+    // If we have new messages and we have a pending message, clear it
+    if (chatMessages && chatMessages.length > lastMessageCount && pendingUserMessage) {
+      setPendingUserMessage(null);
+      setShowAiLoading(false);
+    }
+    setLastMessageCount(chatMessages.length);
+  }, [chatMessages.length, lastMessageCount, pendingUserMessage]);
 
   // Handle notebook not found - but give more time for real-time updates to arrive
   useEffect(() => {
@@ -84,26 +102,43 @@ export default function ProjectView() {
     }
   }, [notebooksLoading, project, id, navigate, toast, notebooks]);
 
-  const handleSendMessage = useCallback((content: string) => {
+  const handleSendMessage = useCallback(async (content: string) => {
     if (!id) return;
     
-    sendMessage(
-      {
-        message: content,
+    try {
+      // Show pending message immediately
+      setPendingUserMessage(content);
+      
+      await sendMessage({
         notebookId: id,
-      },
-      {
-        onError: (error: any) => {
-          console.error('Failed to send message:', error);
-          toast({
-            title: "Failed to send message",
-            description: error.message || "Please try again",
-            variant: "destructive",
-          });
-        },
-      }
-    );
+        role: 'user',
+        content: content,
+      });
+      
+      // Show AI loading after user message is sent
+      setShowAiLoading(true);
+    } catch (error: any) {
+      console.error('Failed to send message:', error);
+      // Clear pending message on error
+      setPendingUserMessage(null);
+      setShowAiLoading(false);
+      toast({
+        title: "Failed to send message",
+        description: error.message || "Please try again",
+        variant: "destructive",
+      });
+    }
   }, [id, sendMessage, toast]);
+
+  const handleSourceAdded = useCallback(() => {
+    // Invalidate queries to refetch sources and notebook data
+    if (id) {
+      console.log('Source added, invalidating queries for:', id);
+      queryClient.invalidateQueries({ queryKey: ['sources', id] });
+      queryClient.invalidateQueries({ queryKey: ['notebooks'] });
+      queryClient.invalidateQueries({ queryKey: ['notebook', id] });
+    }
+  }, [id, queryClient]);
 
   const handleRemoveSource = async (sourceId: string) => {
     try {
@@ -131,10 +166,6 @@ export default function ProjectView() {
     setSelectedSourceId(sourceId);
   };
 
-  const handleSourceAdded = () => {
-    // Sources will be updated via real-time subscription
-  };
-
   const handleDeleteGeneratedItem = (itemId: string) => {
     setGeneratedItems((prev) => prev.filter((item) => item.id !== itemId));
   };
@@ -142,6 +173,8 @@ export default function ProjectView() {
   const handleClearChat = async () => {
     if (!id) return;
     deleteChatHistory(id);
+    // Reset clicked questions when chat is cleared
+    setClickedQuestions(new Set());
   };
 
   const handleCitationClick = (citation: any) => {
@@ -152,6 +185,11 @@ export default function ProjectView() {
       setSelectedSourceForViewing(source); // Open source viewer directly
     }
   };
+
+  const handleQuestionClick = useCallback((question: string) => {
+    // Add question to clicked set to remove it from display
+    setClickedQuestions(prev => new Set(prev).add(question));
+  }, []);
 
   const hasSources = sources.length > 0;
 
@@ -256,10 +294,11 @@ export default function ProjectView() {
               messages={messages}
               isTyping={isSending}
               onSendMessage={handleSendMessage}
-              exampleQuestions={project?.example_questions || []}
+              exampleQuestions={project?.example_questions?.filter(q => !clickedQuestions.has(q)) || []}
               onClearChat={handleClearChat}
               isDeletingChatHistory={isDeletingChatHistory}
               onCitationClick={handleCitationClick}
+              onQuestionClick={handleQuestionClick}
               notebookId={id}
               notebook={{
                 title: project?.title,
@@ -268,6 +307,8 @@ export default function ProjectView() {
                 generation_status: project?.generation_status,
               }}
               sourceCount={sources.length}
+              pendingUserMessage={pendingUserMessage}
+              showAiLoading={showAiLoading}
             />
           )}
         </div>

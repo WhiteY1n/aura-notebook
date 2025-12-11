@@ -12,6 +12,10 @@ import {
   ChevronRight,
   FileAudio,
   Image,
+  Loader2,
+  CheckCircle,
+  XCircle,
+  Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,6 +46,7 @@ export interface Source {
   content?: string;
   summary?: string;
   url?: string;
+  processing_status?: string;
 }
 
 interface SourcePanelProps {
@@ -65,6 +70,23 @@ function getSourceIcon(type: Source["type"]) {
     image: <Image className="h-4 w-4" />,
   };
   return icons[type];
+}
+
+function renderProcessingStatus(status?: string) {
+  switch (status) {
+    case 'uploading':
+      return <Upload className="h-4 w-4 animate-pulse text-blue-500" />;
+    case 'processing':
+      return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
+    case 'completed':
+      return <CheckCircle className="h-4 w-4 text-green-500" />;
+    case 'failed':
+      return <XCircle className="h-4 w-4 text-red-500" />;
+    case 'pending':
+      return <Loader2 className="h-4 w-4 animate-pulse text-gray-500" />;
+    default:
+      return null;
+  }
 }
 
 export function SourcePanel({
@@ -213,6 +235,13 @@ export function SourcePanel({
                           >
                             {source.title}
                           </span>
+
+                          {/* Processing Status Icon */}
+                          {source.processing_status && (
+                            <div className="shrink-0">
+                              {renderProcessingStatus(source.processing_status)}
+                            </div>
+                          )}
 
                           <Button
                             variant="ghost"

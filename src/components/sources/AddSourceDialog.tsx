@@ -173,6 +173,9 @@ export function AddSourceDialog({
         fileInputRef.current.value = "";
       }
 
+      // Call onSourceAdded callback to trigger refetch
+      onSourceAdded?.();
+
       // Step 4: Show success toast
       toast({
         title: "Files Added",

@@ -16,6 +16,9 @@ interface ChatInputProps {
   disabled?: boolean;
   placeholder?: string;
   exampleQuestions?: string[];
+  pendingUserMessage?: string | null;
+  showAiLoading?: boolean;
+  onQuestionClick?: (question: string) => void;
 }
 
 const defaultSuggestions = [
@@ -29,7 +32,10 @@ export function ChatInput({
   onSend, 
   disabled, 
   placeholder = "Ask anything about your sources...",
-  exampleQuestions = []
+  exampleQuestions = [],
+  pendingUserMessage = null,
+  showAiLoading = false,
+  onQuestionClick,
 }: ChatInputProps) {
   const [input, setInput] = useState("");
   const [isFocused, setIsFocused] = useState(false);
@@ -50,6 +56,7 @@ export function ChatInput({
   };
 
   const handleQuestionClick = (question: string) => {
+    onQuestionClick?.(question);
     onSend(question);
   };
 
@@ -96,7 +103,7 @@ export function ChatInput({
       </form>
 
       {/* Example Questions Carousel or Static Suggestions */}
-      {exampleQuestions.length > 0 ? (
+      {!disabled && !pendingUserMessage && !showAiLoading && exampleQuestions.length > 0 ? (
         <div className="w-full">
           <Carousel className="w-full">
             <CarouselContent className="-ml-2">
@@ -122,7 +129,7 @@ export function ChatInput({
             )}
           </Carousel>
         </div>
-      ) : (
+      ) : !disabled && !pendingUserMessage && !showAiLoading && exampleQuestions.length === 0 ? (
         <div className="flex flex-wrap gap-2">
           {defaultSuggestions.map((suggestion) => (
             <motion.button
@@ -138,7 +145,7 @@ export function ChatInput({
             </motion.button>
           ))}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

@@ -29,6 +29,16 @@ export const useSources = (notebookId?: string) => {
       return data;
     },
     enabled: !!notebookId,
+    refetchInterval: (query) => {
+      // Poll every 2 seconds if any source is still processing
+      const data = query.state.data as any[] || [];
+      const hasProcessing = data.some(source => 
+        source.processing_status === 'pending' || 
+        source.processing_status === 'uploading' || 
+        source.processing_status === 'processing'
+      );
+      return hasProcessing ? 2000 : false;
+    },
   });
 
   // Set up Realtime subscription for sources table
