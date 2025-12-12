@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Mail, Lock, User, Sparkles } from "lucide-react";
+import EmailConfirmation from "@/components/auth/EmailConfirmation";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -31,6 +32,8 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState("");
 
   // Redirect if already logged in
   useEffect(() => {
@@ -117,6 +120,7 @@ export default function Auth() {
             data: {
               full_name: fullName || undefined,
             },
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
           },
         });
         
@@ -136,12 +140,23 @@ export default function Auth() {
             });
           }
         } else {
-          console.log('Sign up successful:', data.user?.email);
-          toast({
-            title: "Account created!",
-            description: "Welcome! You're now signed in.",
-          });
-          // Navigation will be handled by AuthContext
+          console.log('Sign up successful:', data);
+          
+          // Check if email confirmation is required
+          if (data.user && !data.session) {
+            // Email confirmation required
+            console.log('Email confirmation required for:', data.user.email);
+            setPendingEmail(email);
+            setShowEmailConfirmation(true);
+          } else if (data.session) {
+            // User is already logged in (email confirmation disabled)
+            console.log('User signed up and logged in:', data.user?.email);
+            toast({
+              title: "Account created!",
+              description: "Welcome! You're now signed in.",
+            });
+            // Navigation will be handled by AuthContext
+          }
         }
       }
     } catch (err) {
@@ -161,6 +176,23 @@ export default function Auth() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
+    );
+  }
+
+  // Show email confirmation screen
+  if (showEmailConfirmation) {
+    return (
+      <EmailConfirmation 
+        email={pendingEmail} 
+        onClose={() => {
+          setShowEmailConfirmation(false);
+          // Reset form
+          setEmail("");
+          setPassword("");
+          setFullName("");
+          setIsLogin(true);
+        }} 
+      />
     );
   }
 

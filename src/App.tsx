@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 // Pages
 import Auth from "./pages/Auth";
+import AuthCallback from "./pages/AuthCallback";
 import Dashboard from "./pages/Dashboard";
 import ProjectView from "./pages/ProjectView";
 import Flashcards from "./pages/Flashcards";
@@ -29,6 +30,7 @@ const App = () => (
             <Routes>
               {/* Public routes */}
               <Route path="/auth" element={<Auth />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
               
               {/* Protected routes */}
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
