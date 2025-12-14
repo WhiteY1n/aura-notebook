@@ -4,15 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Moon, Sun, Trash2, Loader2 } from "lucide-react";
+import { ArrowLeft, Moon, Sun, Trash2, Loader2, Lock } from "lucide-react";
 
 export default function Settings() {
   const { theme, setTheme, isDark } = useTheme();
@@ -24,9 +22,87 @@ export default function Settings() {
   const [confirmText, setConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [profile, setProfile] = useState({ name: "User", email: user?.email || "user@example.com" });
-  const [aiModel, setAiModel] = useState("gemini-1.5-pro");
-  const [showHighlights, setShowHighlights] = useState(true);
-  const [autoSave, setAutoSave] = useState(true);
+  
+  // Password change states
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  const handleChangePassword = async () => {
+    // Validation
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast({
+        title: "Missing fields",
+        description: "Please fill in all password fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Passwords don't match",
+        description: "New password and confirm password must match",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 6 characters",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsChangingPassword(true);
+
+    try {
+      // First, verify current password by trying to sign in
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user?.email || "",
+        password: currentPassword,
+      });
+
+      if (signInError) {
+        throw new Error("Current password is incorrect");
+      }
+
+      // Update password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      toast({
+        title: "Password changed",
+        description: "Your password has been successfully updated",
+      });
+
+      // Reset form and close dialog
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordDialogOpen(false);
+
+    } catch (error) {
+      console.error("Error changing password:", error);
+      toast({
+        title: "Failed to change password",
+        description: error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
 
   const handleDeleteAccount = async () => {
     if (confirmText !== "DELETE") {
@@ -101,10 +177,140 @@ export default function Settings() {
         </div>
       </header>
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        <Card><CardHeader><CardTitle>Profile</CardTitle><CardDescription>Manage your account</CardDescription></CardHeader><CardContent className="space-y-4"><div className="space-y-2"><Label>Name</Label><Input value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} /></div><div className="space-y-2"><Label>Email</Label><Input type="email" value={profile.email} onChange={(e) => setProfile({ ...profile, email: e.target.value })} /></div></CardContent></Card>
-        <Card><CardHeader><CardTitle>Appearance</CardTitle></CardHeader><CardContent><div className="space-y-2"><Label>Theme</Label><Select value={theme} onValueChange={setTheme}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="light">Light</SelectItem><SelectItem value="dark">Dark</SelectItem><SelectItem value="system">System</SelectItem></SelectContent></Select></div></CardContent></Card>
-        <Card><CardHeader><CardTitle>AI Model</CardTitle></CardHeader><CardContent><Select value={aiModel} onValueChange={setAiModel}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem><SelectItem value="gemini-1.5-flash">Gemini 1.5 Flash</SelectItem><SelectItem value="gpt-4.1">GPT-4.1</SelectItem><SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem></SelectContent></Select></CardContent></Card>
-        <Card><CardHeader><CardTitle>Document Settings</CardTitle></CardHeader><CardContent className="space-y-4"><div className="flex items-center justify-between"><div><Label>Auto-save notes</Label><p className="text-sm text-muted-foreground">Save automatically</p></div><Switch checked={autoSave} onCheckedChange={setAutoSave} /></div><Separator /><div className="flex items-center justify-between"><div><Label>Show highlights</Label><p className="text-sm text-muted-foreground">Display highlights</p></div><Switch checked={showHighlights} onCheckedChange={setShowHighlights} /></div></CardContent></Card>
+        {/* Profile Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Profile</CardTitle>
+            <CardDescription>Manage your account</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Name</Label>
+              <Input 
+                value={profile.name} 
+                onChange={(e) => setProfile({ ...profile, name: e.target.value })} 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input 
+                type="email" 
+                value={profile.email} 
+                onChange={(e) => setProfile({ ...profile, email: e.target.value })} 
+                disabled
+                className="bg-muted"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Security Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Security</CardTitle>
+            <CardDescription>Manage your password and security settings</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Dialog open={passwordDialogOpen} onOpenChange={(open) => {
+              setPasswordDialogOpen(open);
+              if (!open) {
+                setCurrentPassword("");
+                setNewPassword("");
+                setConfirmPassword("");
+              }
+            }}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Lock className="h-4 w-4 mr-2" />
+                  Change Password
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Change Password</DialogTitle>
+                  <DialogDescription>
+                    Enter your current password and choose a new one
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="current-password">Current Password</Label>
+                    <Input
+                      id="current-password"
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      disabled={isChangingPassword}
+                      placeholder="Enter current password"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-password">New Password</Label>
+                    <Input
+                      id="new-password"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      disabled={isChangingPassword}
+                      placeholder="Enter new password (min 6 characters)"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm-password">Confirm New Password</Label>
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      disabled={isChangingPassword}
+                      placeholder="Confirm new password"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setPasswordDialogOpen(false)}
+                    disabled={isChangingPassword}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleChangePassword}
+                    disabled={isChangingPassword}
+                  >
+                    {isChangingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {isChangingPassword ? "Changing..." : "Change Password"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </CardContent>
+        </Card>
+
+        {/* Appearance Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Appearance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label>Theme</Label>
+              <Select value={theme} onValueChange={setTheme}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="light">Light</SelectItem>
+                  <SelectItem value="dark">Dark</SelectItem>
+                  <SelectItem value="system">System</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Danger Zone Card */}
         <Card className="border-destructive/50">
           <CardHeader>
             <CardTitle className="text-destructive">Danger Zone</CardTitle>

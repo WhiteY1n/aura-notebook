@@ -39,7 +39,7 @@ export function TopNav({ onCreateProject }: TopNavProps) {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-xl">
-      <div className="flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div className="flex h-14 items-center justify-between px-2 sm:px-4 max-w-full">
         {/* Logo */}
         <Link to="/dashboard" className="flex items-center gap-2">
           <motion.div
@@ -55,7 +55,7 @@ export function TopNav({ onCreateProject }: TopNavProps) {
         </Link>
 
         {/* Right side */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           {/* Theme toggle */}
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button
