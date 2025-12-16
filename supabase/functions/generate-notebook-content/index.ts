@@ -24,6 +24,12 @@ serve(async (req) => {
 
     console.log('Processing request:', { notebookId, filePath, sourceType });
 
+    // Initialize Supabase client FIRST (before any database operations)
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
     // Get environment variables
     const webServiceUrl = Deno.env.get('NOTEBOOK_GENERATION_URL')
     const authHeader = Deno.env.get('NOTEBOOK_GENERATION_AUTH')
@@ -88,12 +94,6 @@ serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-
-    // Initialize Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
 
     // Update notebook status to 'generating'
     await supabaseClient

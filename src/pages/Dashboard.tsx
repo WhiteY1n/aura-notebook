@@ -83,8 +83,8 @@ export default function Dashboard() {
 
   const handleRename = async (id: string, newTitle: string) => {
     try {
-      await updateNotebook.mutateAsync({
-        notebookId: id,
+      await updateNotebook({
+        id: id,
         updates: { title: newTitle },
       });
       

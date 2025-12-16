@@ -107,7 +107,7 @@ export function SourcePanel({
   );
   const [showRenameDialog, setShowRenameDialog] = useState(false);
   const [selectedSourceForRename, setSelectedSourceForRename] = useState<Source | null>(null);
-  const { deleteSource, isDeletingSource } = useSourceDelete();
+  const { deleteSource, isDeleting } = useSourceDelete();
 
   // Sync with parent prop
   const activeSourceForViewing = propSelectedSourceForViewing !== undefined ? propSelectedSourceForViewing : selectedSourceForViewing;
@@ -321,9 +321,9 @@ export function SourcePanel({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
-              disabled={isDeletingSource}
+              disabled={isDeleting}
             >
-              {isDeletingSource ? "Removing..." : "Remove"}
+              {isDeleting ? "Removing..." : "Remove"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

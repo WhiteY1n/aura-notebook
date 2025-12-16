@@ -92,7 +92,7 @@ function StudioContent({ projectId, notebookId, onAddNote, onCitationClick }: St
   };
 
   const handleDeleteNote = (noteId: string) => {
-    deleteNote.mutate(noteId);
+    deleteNote(noteId);
     setSelectedNote(null);
   };
 
@@ -286,7 +286,7 @@ function StudioContent({ projectId, notebookId, onAddNote, onCitationClick }: St
                   key={note.id} 
                   note={note}
                   onClick={() => handleNoteClick(note)}
-                  onDelete={() => deleteNote.mutate(note.id)}
+                  onDelete={() => deleteNote(note.id)}
                 />
               ))}
             </div>

@@ -35,7 +35,7 @@ export const useNotebookUpdate = () => {
   });
 
   return {
-    updateNotebook: updateNotebook.mutate,
+    updateNotebook: updateNotebook.mutateAsync,
     isUpdating: updateNotebook.isPending,
   };
 };

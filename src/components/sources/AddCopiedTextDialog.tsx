@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useSources } from "@/hooks/useSources";
 
 interface AddCopiedTextDialogProps {
   open: boolean;
@@ -32,6 +33,7 @@ export function AddCopiedTextDialog({
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { addSourceAsync } = useSources(projectId);
 
   // Auto-paste from clipboard when dialog opens
   useEffect(() => {
@@ -95,21 +97,55 @@ export function AddCopiedTextDialog({
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase.from("sources").insert({
-        project_id: projectId,
+      console.log('Creating text source...');
+      console.log('Title:', title.trim());
+      console.log('Content length:', content.trim().length);
+      console.log('Project ID:', projectId);
+      
+      // Create source using addSourceAsync (will trigger generation if first source)
+      const createdSource = await addSourceAsync({
+        notebookId: projectId,
         title: title.trim(),
-        type: "text",
+        type: 'text',
         content: content.trim(),
+        processing_status: 'processing',
+        metadata: {
+          characterCount: content.length,
+          webhookProcessed: true
+        }
+      });
+      
+      console.log('Text source created successfully:', createdSource.id);
+
+      // Send to webhook endpoint with source ID
+      console.log('Calling process-additional-sources edge function...');
+      const { data: webhookData, error: webhookError } = await supabase.functions.invoke('process-additional-sources', {
+        body: {
+          type: 'copied-text',
+          notebookId: projectId,
+          title: title.trim(),
+          content: content.trim(),
+          sourceIds: [createdSource.id],
+          timestamp: new Date().toISOString()
+        }
       });
 
-      if (error) {
-        throw new Error(error.message);
+      if (webhookError) {
+        console.error('Webhook error:', webhookError);
+        console.error('Webhook error details:', JSON.stringify(webhookError));
+        // Don't throw - source is created, show warning
+        toast({
+          title: "Partial success",
+          description: `Text added but processing may be delayed. Error: ${webhookError.message}`,
+          variant: "default",
+        });
+      } else {
+        console.log('Webhook response:', webhookData);
+        toast({
+          title: "Success",
+          description: "Text has been added and sent for processing",
+        });
       }
-
-      toast({
-        title: "Text added",
-        description: "Your copied text has been added as a source",
-      });
 
       setTitle("");
       setContent("");
@@ -117,6 +153,7 @@ export function AddCopiedTextDialog({
       onSourceAdded?.();
     } catch (error) {
       console.error("Error adding text:", error);
+      console.error("Error details:", JSON.stringify(error, null, 2));
       toast({
         title: "Failed to add text",
         description: error instanceof Error ? error.message : "Something went wrong",

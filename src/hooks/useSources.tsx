@@ -159,19 +159,17 @@ export const useSources = (notebookId?: string) => {
         if (notebook?.generation_status === 'pending') {
           console.log('Triggering notebook content generation...');
           
-          // Determine if we can trigger generation based on source type and available data
+          // Only trigger generation for file-based sources (PDF, audio)
+          // Text and website sources are handled by process-additional-sources webhook
           const canGenerate = 
             (newSource.type === 'pdf' && newSource.file_path) ||
-            (newSource.type === 'text' && newSource.content) ||
-            (newSource.type === 'website' && newSource.url) ||
-            (newSource.type === 'youtube' && newSource.url) ||
             (newSource.type === 'audio' && newSource.file_path);
           
           if (canGenerate) {
             try {
               await generateNotebookContentAsync({
                 notebookId,
-                filePath: newSource.file_path || newSource.url,
+                filePath: newSource.file_path,
                 sourceType: newSource.type
               });
             } catch (error) {
