@@ -10,7 +10,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Moon, Sun, Trash2, Loader2, Lock } from "lucide-react";
+import { ArrowLeft, Moon, Sun, Trash2, Loader2, Lock, Eye, EyeOff } from "lucide-react";
 
 export default function Settings() {
   const { theme, setTheme, isDark } = useTheme();
@@ -21,7 +21,9 @@ export default function Settings() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
-  const [profile, setProfile] = useState({ name: "User", email: user?.email || "user@example.com" });
+  const [profile, setProfile] = useState({ name: user?.user_metadata?.full_name || "User", email: user?.email || "user@example.com" });
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileChanged, setProfileChanged] = useState(false);
   
   // Password change states
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
@@ -29,6 +31,37 @@ export default function Settings() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const handleSaveProfile = async () => {
+    setIsSavingProfile(true);
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { full_name: profile.name }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been successfully updated",
+      });
+
+      setProfileChanged(false);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast({
+        title: "Failed to update profile",
+        description: error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   const handleChangePassword = async () => {
     // Validation
@@ -188,7 +221,10 @@ export default function Settings() {
               <Label>Name</Label>
               <Input 
                 value={profile.name} 
-                onChange={(e) => setProfile({ ...profile, name: e.target.value })} 
+                onChange={(e) => {
+                  setProfile({ ...profile, name: e.target.value });
+                  setProfileChanged(e.target.value !== (user?.user_metadata?.full_name || "User"));
+                }} 
               />
             </div>
             <div className="space-y-2">
@@ -201,6 +237,22 @@ export default function Settings() {
                 className="bg-muted"
               />
             </div>
+            {profileChanged && (
+              <Button 
+                onClick={handleSaveProfile} 
+                disabled={isSavingProfile}
+                className="w-full"
+              >
+                {isSavingProfile ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </Button>
+            )}
           </CardContent>
         </Card>
 
@@ -235,36 +287,66 @@ export default function Settings() {
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
                     <Label htmlFor="current-password">Current Password</Label>
-                    <Input
-                      id="current-password"
-                      type="password"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      disabled={isChangingPassword}
-                      placeholder="Enter current password"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="current-password"
+                        type={showCurrentPassword ? "text" : "password"}
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        disabled={isChangingPassword}
+                        placeholder="Enter current password"
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="new-password">New Password</Label>
-                    <Input
-                      id="new-password"
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      disabled={isChangingPassword}
-                      placeholder="Enter new password (min 6 characters)"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="new-password"
+                        type={showNewPassword ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        disabled={isChangingPassword}
+                        placeholder="Enter new password (min 6 characters)"
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="confirm-password">Confirm New Password</Label>
-                    <Input
-                      id="confirm-password"
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      disabled={isChangingPassword}
-                      placeholder="Confirm new password"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="confirm-password"
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        disabled={isChangingPassword}
+                        placeholder="Confirm new password"
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <DialogFooter>

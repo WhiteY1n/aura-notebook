@@ -1,35 +1,112 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AuthCallback() {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
 
   useEffect(() => {
-    // This page handles the email confirmation callback
-    // Supabase will automatically process the auth tokens from URL hash
-    // and trigger the onAuthStateChange event in AuthContext
-    
-    console.log("AuthCallback: Processing email confirmation...");
-    
-    // Give Supabase a moment to process the tokens
-    const timer = setTimeout(() => {
-      // Redirect to dashboard - AuthContext will handle the session
-      navigate("/dashboard", { replace: true });
-    }, 1500);
+    const handleAuthCallback = async () => {
+      try {
+        // Get the hash parameters from URL
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get("access_token");
+        const refreshToken = hashParams.get("refresh_token");
+        const type = hashParams.get("type");
 
-    return () => clearTimeout(timer);
-  }, [navigate]);
+        console.log("AuthCallback: Processing auth callback", { type });
+
+        if (!accessToken) {
+          throw new Error("No access token found in URL");
+        }
+
+        // Set the session with the tokens from URL
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken || "",
+        });
+
+        if (error) throw error;
+
+        setStatus("success");
+
+        // Show success message based on type
+        if (type === "signup") {
+          toast({
+            title: "Email confirmed!",
+            description: "Your account has been verified successfully",
+          });
+        } else if (type === "recovery") {
+          toast({
+            title: "Password reset link verified",
+            description: "You can now set a new password",
+          });
+          // Redirect to password reset page if you have one
+          setTimeout(() => navigate("/settings", { replace: true }), 1500);
+          return;
+        }
+
+        // Redirect to dashboard
+        setTimeout(() => navigate("/dashboard", { replace: true }), 1500);
+      } catch (error) {
+        console.error("AuthCallback error:", error);
+        setStatus("error");
+        
+        toast({
+          title: "Authentication failed",
+          description: error instanceof Error ? error.message : "Failed to confirm email",
+          variant: "destructive",
+        });
+
+        // Redirect to auth page after error
+        setTimeout(() => navigate("/auth", { replace: true }), 3000);
+      }
+    };
+
+    handleAuthCallback();
+  }, [navigate, toast]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background">
-      <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-      <p className="text-lg font-medium text-foreground">
-        Confirming your email...
-      </p>
-      <p className="text-sm text-muted-foreground mt-2">
-        Please wait a moment
-      </p>
+      {status === "loading" && (
+        <>
+          <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+          <p className="text-lg font-medium text-foreground">
+            Confirming your email...
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Please wait a moment
+          </p>
+        </>
+      )}
+      
+      {status === "success" && (
+        <>
+          <CheckCircle2 className="h-12 w-12 text-green-500 mb-4" />
+          <p className="text-lg font-medium text-foreground">
+            Email confirmed!
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Redirecting to dashboard...
+          </p>
+        </>
+      )}
+      
+      {status === "error" && (
+        <>
+          <XCircle className="h-12 w-12 text-destructive mb-4" />
+          <p className="text-lg font-medium text-foreground">
+            Confirmation failed
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Redirecting to login...
+          </p>
+        </>
+      )}
     </div>
   );
 }
