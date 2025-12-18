@@ -329,3 +329,26 @@
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
 }
+
+/* Hide browser password manager icons */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-contacts-auto-fill-button {
+  visibility: hidden;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+}
+
+/* Prevent LastPass and other password managers from showing icons */
+input[data-lpignore="true"] {
+  background-image: none !important;
+}
+
+input[type="password"][data-lpignore="true"]::-webkit-textfield-decoration-container {
+  padding-right: 0;
+}

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Mail, Lock, User, Sparkles } from "lucide-react";
+import { Loader2, Mail, Lock, User, Sparkles, Eye, EyeOff } from "lucide-react";
 import EmailConfirmation from "@/components/auth/EmailConfirmation";
 
 const loginSchema = z.object({
@@ -17,8 +17,20 @@ const loginSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
-const signUpSchema = loginSchema.extend({
+const signUpSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string().optional(),
   fullName: z.string().min(2, "Name must be at least 2 characters").optional(),
+}).refine((data) => {
+  // Only validate if confirmPassword has a value
+  if (data.confirmPassword && data.confirmPassword.length > 0) {
+    return data.password === data.confirmPassword;
+  }
+  return true;
+}, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
 });
 
 export default function Auth() {
@@ -30,10 +42,13 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
   const [pendingEmail, setPendingEmail] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -47,7 +62,7 @@ export default function Auth() {
       if (isLogin) {
         loginSchema.parse({ email, password });
       } else {
-        signUpSchema.parse({ email, password, fullName: fullName || undefined });
+        signUpSchema.parse({ email, password, confirmPassword, fullName: fullName || undefined });
       }
       setErrors({});
       return true;
@@ -189,6 +204,7 @@ export default function Auth() {
           // Reset form
           setEmail("");
           setPassword("");
+          setConfirmPassword("");
           setFullName("");
           setIsLogin(true);
         }} 
@@ -276,18 +292,63 @@ export default function Auth() {
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 pr-10"
                     autoComplete={isLogin ? "current-password" : "new-password"}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
                 {errors.password && (
                   <p className="text-sm text-destructive">{errors.password}</p>
                 )}
               </div>
+
+              {!isLogin && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="space-y-2"
+                >
+                  <Label htmlFor="confirmPassword">Confirm password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="pl-10 pr-10"
+                      autoComplete="new-password"
+                      data-lpignore="true"
+                      data-form-type="other"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors z-10 pointer-events-auto"
+                      tabIndex={-1}
+                      aria-label="Toggle password visibility"
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {errors.confirmPassword && (
+                    <p className="text-sm text-destructive">{errors.confirmPassword}</p>
+                  )}
+                </motion.div>
+              )}
             </CardContent>
 
             <CardFooter className="flex flex-col space-y-4">

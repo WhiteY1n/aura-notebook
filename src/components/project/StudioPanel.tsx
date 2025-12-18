@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { X, ChevronUp, Plus, Loader2, AlertCircle, CheckCircle2, RefreshCw } from "lucide-react";
 import { NoteListItem } from "./NoteListItem";
 import { NoteViewer } from "./NoteViewer";
+import { ManualNoteEditor } from "./ManualNoteEditor";
 import { AudioPlayer } from "./AudioPlayer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -54,6 +55,7 @@ function StudioContent({ projectId, notebookId, onAddNote, onCitationClick }: St
   } = useAudioOverview(notebookId);
   const queryClient = useQueryClient();
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+  const [showManualEditor, setShowManualEditor] = useState(false);
   const [audioError, setAudioError] = useState(false);
 
   const notebook = notebooks?.find(n => n.id === notebookId);
@@ -89,11 +91,24 @@ function StudioContent({ projectId, notebookId, onAddNote, onCitationClick }: St
 
   const handleBackToList = () => {
     setSelectedNote(null);
+    setShowManualEditor(false);
   };
 
   const handleDeleteNote = (noteId: string) => {
     deleteNote(noteId);
     setSelectedNote(null);
+  };
+
+  const handleAddNote = () => {
+    setShowManualEditor(true);
+    setSelectedNote(null);
+  };
+
+  const handleNoteSaved = () => {
+    // Refresh notes list
+    queryClient.invalidateQueries({
+      queryKey: ['notes', notebookId]
+    });
   };
 
   const handleGenerateAudio = () => {
@@ -156,6 +171,17 @@ function StudioContent({ projectId, notebookId, onAddNote, onCitationClick }: St
     }
     return null;
   };
+
+  // Show manual note editor
+  if (showManualEditor) {
+    return (
+      <ManualNoteEditor
+        notebookId={notebookId}
+        onBack={handleBackToList}
+        onSave={handleNoteSaved}
+      />
+    );
+  }
 
   // Show note viewer if a note is selected
   if (selectedNote) {
@@ -267,7 +293,7 @@ function StudioContent({ projectId, notebookId, onAddNote, onCitationClick }: St
             <Button
               variant="ghost"
               size="sm"
-              onClick={onAddNote}
+              onClick={handleAddNote}
               className="h-6 px-2 gap-1 text-xs hover:bg-primary/10"
             >
               <Plus className="h-3.5 w-3.5" />
