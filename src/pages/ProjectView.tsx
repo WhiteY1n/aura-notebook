@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Moon, Sun, CloudUpload } from "lucide-react";
 import { SourcePanel, Source } from "@/components/viewer/SourcePanel";
+import { SourceSheet } from "@/components/viewer/SourceSheet";
 import { ChatPanel, Message } from "@/components/viewer/ChatPanel";
 import { StudioPanel, StudioSheet } from "@/components/project/StudioPanel";
 import { GeneratedItem } from "@/components/project/StudioListItem";
@@ -237,17 +238,19 @@ export default function ProjectView() {
 
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Sources Panel (Left) */}
-        <SourcePanel
-          sources={sources}
-          onRemoveSource={handleRemoveSource}
-          onSelectSource={handleSelectSource}
-          selectedSourceId={selectedSourceId}
-          selectedSourceForViewing={selectedSourceForViewing}
-          onSourceViewerChange={setSelectedSourceForViewing}
-          projectId={id || ""}
-          onSourceAdded={handleSourceAdded}
-        />
+        {/* Sources Panel (Left) - hidden on mobile */}
+        <div className="hidden lg:block">
+          <SourcePanel
+            sources={sources}
+            onRemoveSource={handleRemoveSource}
+            onSelectSource={handleSelectSource}
+            selectedSourceId={selectedSourceId}
+            selectedSourceForViewing={selectedSourceForViewing}
+            onSourceViewerChange={setSelectedSourceForViewing}
+            projectId={id || ""}
+            onSourceAdded={handleSourceAdded}
+          />
+        </div>
 
         {/* Chat Panel (Center/Right) */}
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -323,6 +326,15 @@ export default function ProjectView() {
           onDeleteItem={handleDeleteGeneratedItem}
         />
 
+        {/* Mobile Sheets */}
+        <SourceSheet
+          sources={sources}
+          onRemoveSource={handleRemoveSource}
+          onSelectSource={handleSelectSource}
+          selectedSourceId={selectedSourceId}
+          projectId={id || ""}
+          onSourceAdded={handleSourceAdded}
+        />
         {/* Studio Sheet (Mobile) */}
         <StudioSheet
           projectId={id || ""}
