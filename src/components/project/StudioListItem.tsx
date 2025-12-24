@@ -11,7 +11,7 @@ import { motion } from "framer-motion";
 export interface GeneratedItem {
   id: string;
   title: string;
-  type: "flashcards" | "quiz" | "summary" | "notes";
+  type: "quiz" | "summary" | "notes";
   createdAt: string;
 }
 
@@ -23,7 +23,6 @@ interface StudioListItemProps {
 }
 
 const typeIcons = {
-  flashcards: Layers,
   quiz: HelpCircle,
   summary: FileText,
   notes: FileText,

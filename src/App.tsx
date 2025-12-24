@@ -5,14 +5,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { ProtectedRoute } from "@/features/auth/ProtectedRoute";
 
 // Pages
 import Auth from "./pages/Auth";
 import AuthCallback from "./pages/AuthCallback";
 import Dashboard from "./pages/Dashboard";
 import ProjectView from "./pages/ProjectView";
-import Flashcards from "./pages/Flashcards";
 import Summary from "./pages/Summary";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -51,14 +50,6 @@ const App = () => (
                 }
               />
               <Route path="/viewer/:id" element={<Navigate to="/project/:id" replace />} />
-              <Route
-                path="/flashcards/:id"
-                element={
-                  <ProtectedRoute>
-                    <Flashcards />
-                  </ProtectedRoute>
-                }
-              />
               <Route
                 path="/summary/:id"
                 element={

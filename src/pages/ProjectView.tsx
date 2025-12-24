@@ -16,11 +16,7 @@ import { useChatMessages } from "@/hooks/useChatMessages";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
-
-const mockGeneratedItems: GeneratedItem[] = [
-  { id: "1", title: "ML Concepts Flashcards", type: "flashcards", createdAt: "Today" },
-  { id: "2", title: "Chapter Summary", type: "summary", createdAt: "Yesterday" },
-];
+import { mockGeneratedItems } from "@/mocks/studio";
 
 export default function ProjectView() {
   const { id } = useParams();

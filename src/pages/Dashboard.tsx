@@ -1,12 +1,12 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Loader2 } from "lucide-react";
-import { TopNav } from "@/components/dashboard/TopNav";
-import { SearchBar } from "@/components/dashboard/SearchBar";
-import { LayoutToggle } from "@/components/dashboard/LayoutToggle";
-import { SortDropdown, SortOption } from "@/components/dashboard/SortDropdown";
-import { ProjectCard, Project } from "@/components/dashboard/ProjectCard";
-import { EmptyState } from "@/components/dashboard/EmptyState";
+import { TopNav } from "@/features/dashboard/TopNav";
+import { SearchBar } from "@/features/dashboard/SearchBar";
+import { LayoutToggle } from "@/features/dashboard/LayoutToggle";
+import { SortDropdown, SortOption } from "@/features/dashboard/SortDropdown";
+import { ProjectCard, Project } from "@/features/dashboard/ProjectCard";
+import { EmptyState } from "@/features/dashboard/EmptyState";
 import { Button } from "@/components/ui/button";
 import { FadeIn } from "@/components/animations";
 import { useNotebooks } from "@/hooks/useNotebooks";

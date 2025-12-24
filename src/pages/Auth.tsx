@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Mail, Lock, User, Sparkles, Eye, EyeOff } from "lucide-react";
-import EmailConfirmation from "@/components/auth/EmailConfirmation";
+import EmailConfirmation from "@/features/auth/EmailConfirmation";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
