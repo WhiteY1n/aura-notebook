@@ -38,11 +38,13 @@ const ACCEPTED_TYPES = {
   "application/pdf": "pdf",
   "text/plain": "text",
   "text/markdown": "text",
+  "application/msword": "pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "pdf",
   "audio/mpeg": "audio",
   "audio/wav": "audio",
 } as const;
 
-const ACCEPTED_EXTENSIONS = [".pdf", ".txt", ".md", ".mp3", ".wav"];
+const ACCEPTED_EXTENSIONS = [".pdf", ".txt", ".md", ".doc", ".docx", ".mp3", ".wav"];
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 function getFileIcon(type: string) {
@@ -60,6 +62,8 @@ function getFileTypeFromExtension(filename: string): "pdf" | "text" | "audio" | 
   const ext = filename.toLowerCase().split('.').pop();
   switch (ext) {
     case 'pdf':
+    case 'doc':
+    case 'docx':
       return 'pdf';
     case 'txt':
     case 'md':

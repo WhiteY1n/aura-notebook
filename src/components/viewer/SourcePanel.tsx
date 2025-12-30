@@ -49,6 +49,17 @@ export interface Source {
   processing_status?: string;
 }
 
+interface Citation {
+  citation_id: string;
+  source_id: string;
+  source_title: string;
+  source_type: string;
+  chunk_index?: number;
+  excerpt?: string;
+  chunk_lines_from?: number;
+  chunk_lines_to?: number;
+}
+
 interface SourcePanelProps {
   sources: Source[];
   onRemoveSource: (sourceId: string) => void;
@@ -58,6 +69,7 @@ interface SourcePanelProps {
   onSourceViewerChange?: (source: Source | null) => void;
   projectId: string;
   onSourceAdded?: () => void;
+  highlightedCitation?: Citation | null;
 }
 
 function getSourceIcon(type: Source["type"]) {
@@ -98,6 +110,7 @@ export function SourcePanel({
   onSourceViewerChange,
   projectId,
   onSourceAdded,
+  highlightedCitation,
 }: SourcePanelProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [deleteSourceId, setDeleteSourceId] = useState<string | null>(null);
@@ -157,6 +170,7 @@ export function SourcePanel({
             sourceUrl={activeSourceForViewing.url}
             sourceType={activeSourceForViewing.type}
             onClose={handleBackToSources}
+            highlightedCitation={highlightedCitation}
           />
         ) : (
           <>

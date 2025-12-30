@@ -1,14 +1,34 @@
 import { useState, useCallback, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Moon, Sun, CloudUpload } from "lucide-react";
+import { ArrowLeft, Moon, Sun, CloudUpload, Settings, LogOut } from "lucide-react";
 import { SourcePanel, Source } from "@/components/viewer/SourcePanel";
 import { SourceSheet } from "@/components/viewer/SourceSheet";
 import { ChatPanel, Message } from "@/components/viewer/ChatPanel";
 import { StudioPanel, StudioSheet } from "@/components/project/StudioPanel";
 import { GeneratedItem } from "@/components/project/StudioListItem";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { AddSourceDialog } from "@/components/sources";
 import { useTheme } from "@/hooks/useTheme";
+import { useAuth } from "@/contexts/AuthContext";
 import { useNotebooks } from "@/hooks/useNotebooks";
 import { useSources } from "@/hooks/useSources";
 import { useSourceDelete } from "@/hooks/useSourceDelete";
@@ -22,6 +42,7 @@ export default function ProjectView() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { setTheme, isDark } = useTheme();
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -37,6 +58,8 @@ export default function ProjectView() {
   const [pendingUserMessage, setPendingUserMessage] = useState<string | null>(null);
   const [showAiLoading, setShowAiLoading] = useState(false);
   const [clickedQuestions, setClickedQuestions] = useState<Set<string>>(new Set());
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [highlightedCitation, setHighlightedCitation] = useState<any>(null);
 
   const project = notebooks?.find(nb => nb.id === id);
   const isLoading = notebooksLoading || sourcesLoading;
@@ -180,6 +203,15 @@ export default function ProjectView() {
     if (source) {
       setSelectedSourceId(source.id);
       setSelectedSourceForViewing(source); // Open source viewer directly
+      setHighlightedCitation(citation); // Set citation for highlighting
+    }
+  };
+
+  const handleSourceViewerChange = (source: Source | null) => {
+    setSelectedSourceForViewing(source);
+    // Clear highlighted citation when closing source viewer or switching sources
+    if (!source) {
+      setHighlightedCitation(null);
     }
   };
 
@@ -187,6 +219,20 @@ export default function ProjectView() {
     // Add question to clicked set to remove it from display
     setClickedQuestions(prev => new Set(prev).add(question));
   }, []);
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/auth");
+  };
+
+  const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
+  const userEmail = user?.email || "user@example.com";
+  const initials = userName
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   const hasSources = sources.length > 0;
 
@@ -228,6 +274,45 @@ export default function ProjectView() {
                 {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
             </motion.div>
+
+            {/* User menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  <Avatar className="h-8 w-8 cursor-pointer">
+                    <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${userEmail}`} alt={userName} />
+                    <AvatarFallback className="bg-primary text-primary-foreground text-sm">{initials}</AvatarFallback>
+                  </Avatar>
+                </motion.button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-popover">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium">{userName}</p>
+                    <p className="text-xs text-muted-foreground">{userEmail}</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/settings" className="flex items-center cursor-pointer">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  className="text-destructive focus:text-destructive cursor-pointer"
+                  onClick={() => setShowLogoutDialog(true)}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
@@ -242,9 +327,10 @@ export default function ProjectView() {
             onSelectSource={handleSelectSource}
             selectedSourceId={selectedSourceId}
             selectedSourceForViewing={selectedSourceForViewing}
-            onSourceViewerChange={setSelectedSourceForViewing}
+            onSourceViewerChange={handleSourceViewerChange}
             projectId={id || ""}
             onSourceAdded={handleSourceAdded}
+            highlightedCitation={highlightedCitation}
           />
         </div>
 
@@ -330,6 +416,7 @@ export default function ProjectView() {
           selectedSourceId={selectedSourceId}
           projectId={id || ""}
           onSourceAdded={handleSourceAdded}
+          highlightedCitation={highlightedCitation}
         />
         {/* Studio Sheet (Mobile) */}
         <StudioSheet
@@ -349,6 +436,24 @@ export default function ProjectView() {
         projectId={id || ""}
         onSourceAdded={handleSourceAdded}
       />
+
+      {/* Logout confirmation dialog */}
+      <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sign out?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to sign out of your account?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout}>
+              Sign out
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

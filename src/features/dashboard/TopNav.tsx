@@ -1,5 +1,6 @@
-import { Moon, Sun, Sparkles, Settings, HelpCircle, MessageSquare, LogOut } from "lucide-react";
+import { Moon, Sun, Sparkles, Settings, LogOut } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -10,6 +11,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
@@ -22,6 +33,7 @@ export function TopNav({ onCreateProject }: TopNavProps) {
   const { setTheme, isDark } = useTheme();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   const handleLogout = async () => {
     await signOut();
@@ -96,18 +108,10 @@ export function TopNav({ onCreateProject }: TopNavProps) {
                   Settings
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <HelpCircle className="mr-2 h-4 w-4" />
-                Help
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <MessageSquare className="mr-2 h-4 w-4" />
-                Send Feedback
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
                 className="text-destructive focus:text-destructive cursor-pointer"
-                onClick={handleLogout}
+                onClick={() => setShowLogoutDialog(true)}
               >
                 <LogOut className="mr-2 h-4 w-4" />
                 Log out
@@ -116,6 +120,24 @@ export function TopNav({ onCreateProject }: TopNavProps) {
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Logout confirmation dialog */}
+      <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sign out?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to sign out of your account?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout}>
+              Sign out
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </header>
   );
 }

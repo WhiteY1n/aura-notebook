@@ -143,7 +143,7 @@ export default function Auth() {
           console.error('Sign up error:', error);
           if (error.message.includes('User already registered')) {
             toast({
-              title: "Account exists",
+              title: "Email already in use",
               description: "This email is already registered. Please sign in instead.",
               variant: "destructive",
             });
@@ -156,6 +156,18 @@ export default function Auth() {
           }
         } else {
           console.log('Sign up successful:', data);
+          
+          // Check if user already exists (Supabase returns user with empty identities array)
+          if (data.user && data.user.identities && data.user.identities.length === 0) {
+            // Email already registered
+            console.log('Email already exists:', data.user.email);
+            toast({
+              title: "Email already in use",
+              description: "This email is already registered. Please sign in instead.",
+              variant: "destructive",
+            });
+            return;
+          }
           
           // Check if email confirmation is required
           if (data.user && !data.session) {

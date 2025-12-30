@@ -292,7 +292,7 @@ function ChatMessageWithSave({ message, onCitationClick, notebookId }: { message
 
   return (
     <div className="flex justify-start">
-      <div className="w-full">
+      <div className="w-full group">
         <div className="text-sm leading-relaxed text-foreground">
           <MarkdownRenderer 
             content={message.content}
@@ -303,7 +303,7 @@ function ChatMessageWithSave({ message, onCitationClick, notebookId }: { message
         
         {/* Actions */}
         <div 
-          className="flex items-center gap-2 mt-2 opacity-0 hover:opacity-100 transition-opacity"
+          className="flex items-center gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >

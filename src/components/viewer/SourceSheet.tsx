@@ -9,6 +9,17 @@ import { SourceContentViewer } from "@/components/sources";
 import type { Source } from "./SourcePanel";
 import { cn } from "@/lib/utils";
 
+interface Citation {
+  citation_id: string;
+  source_id: string;
+  source_title: string;
+  source_type: string;
+  chunk_index?: number;
+  excerpt?: string;
+  chunk_lines_from?: number;
+  chunk_lines_to?: number;
+}
+
 interface SourceSheetProps {
   sources: Source[];
   onRemoveSource: (sourceId: string) => void;
@@ -16,9 +27,10 @@ interface SourceSheetProps {
   selectedSourceId?: string;
   projectId: string;
   onSourceAdded?: () => void;
+  highlightedCitation?: Citation | null;
 }
 
-export function SourceSheet({ sources, onRemoveSource, onSelectSource, selectedSourceId, projectId, onSourceAdded }: SourceSheetProps) {
+export function SourceSheet({ sources, onRemoveSource, onSelectSource, selectedSourceId, projectId, onSourceAdded, highlightedCitation }: SourceSheetProps) {
   const [open, setOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [selectedForViewing, setSelectedForViewing] = useState<Source | null>(null);
@@ -51,6 +63,7 @@ export function SourceSheet({ sources, onRemoveSource, onSelectSource, selectedS
               sourceUrl={selectedForViewing.url}
               sourceType={selectedForViewing.type}
               onClose={() => setSelectedForViewing(null)}
+              highlightedCitation={highlightedCitation}
             />
           ) : (
             <div className="flex-1 min-h-0 flex flex-col">

@@ -298,7 +298,7 @@ export function AddSourceDialog({
         ref={fileInputRef}
         type="file"
         multiple
-        accept=".pdf,.txt,.md,audio/*"
+        accept=".pdf,.txt,.md,.doc,.docx,.mp3,.wav"
         onChange={handleFileChange}
         className="hidden"
       />
