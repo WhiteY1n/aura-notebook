@@ -49,43 +49,35 @@ export function SourceContentViewer({
     return sourceContent.split('\n');
   }, [sourceContent]);
 
-  // Find and highlight the excerpt in the content
-  const highlightInfo = useMemo(() => {
-    if (!highlightedCitation || !sourceContent) return null;
+  // Check if we have valid citation line data for highlighting
+  const hasValidCitationLines = highlightedCitation && 
+    typeof highlightedCitation.chunk_lines_from === 'number' && 
+    typeof highlightedCitation.chunk_lines_to === 'number' &&
+    highlightedCitation.chunk_lines_from > 0;
 
-    const excerpt = highlightedCitation.excerpt;
-    if (!excerpt) return null;
-
-    // Find the excerpt position in the content
-    const excerptIndex = sourceContent.indexOf(excerpt);
-    if (excerptIndex === -1) return null;
-
-    // Calculate line number where excerpt starts
-    const beforeExcerpt = sourceContent.substring(0, excerptIndex);
-    const lineNumber = beforeExcerpt.split('\n').length - 1;
-
-    return {
-      lineNumber,
-      excerpt,
-      startIndex: excerptIndex,
-      endIndex: excerptIndex + excerpt.length,
-    };
-  }, [highlightedCitation, sourceContent]);
+  // Calculate highlight range
+  const startLine = hasValidCitationLines ? highlightedCitation!.chunk_lines_from! : -1;
+  const endLine = hasValidCitationLines ? highlightedCitation!.chunk_lines_to! : -1;
 
   // Auto-scroll to highlighted text
   useEffect(() => {
-    if (highlightRef.current && scrollAreaRef.current) {
-      const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (viewport) {
+    if (hasValidCitationLines && highlightRef.current && scrollAreaRef.current) {
+      const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
+      if (viewport && highlightRef.current) {
         setTimeout(() => {
-          highlightRef.current?.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-          });
-        }, 100);
+          const highlightedElement = highlightRef.current;
+          if (highlightedElement && viewport) {
+            // Calculate scroll position to center the highlighted content
+            const scrollTop = highlightedElement.offsetTop - (viewport.clientHeight / 2) + (highlightedElement.clientHeight / 2);
+            viewport.scrollTo({
+              top: Math.max(0, scrollTop),
+              behavior: 'smooth'
+            });
+          }
+        }, 200);
       }
     }
-  }, [highlightInfo]);
+  }, [highlightedCitation?.citation_id, highlightedCitation?.chunk_lines_from, hasValidCitationLines]);
 
   if (!sourceContent) {
     return (
@@ -168,35 +160,25 @@ export function SourceContentViewer({
       {/* Content */}
       <ScrollArea className="flex-1 h-full" ref={scrollAreaRef}>
         <div className="p-6 max-w-4xl">
-          <div className="prose prose-sm max-w-none dark:prose-invert">
+          <div className="prose prose-sm max-w-none dark:prose-invert space-y-1">
             {contentLines.map((line, idx) => {
-              const isHighlightedLine = highlightInfo && idx === highlightInfo.lineNumber;
+              const lineNumber = idx + 1; // Lines are 1-indexed
+              const isHighlighted = startLine > 0 && lineNumber >= startLine && lineNumber <= endLine;
+              const isFirstHighlightedLine = isHighlighted && lineNumber === startLine;
               
-              // If this line contains the highlighted excerpt
-              if (isHighlightedLine && highlightInfo.excerpt) {
-                const lineStartIndex = contentLines.slice(0, idx).join('\n').length + (idx > 0 ? 1 : 0);
-                const excerptStartInLine = highlightInfo.startIndex - lineStartIndex;
-                const excerptEndInLine = excerptStartInLine + highlightInfo.excerpt.length;
-
-                // Split line into before, highlight, and after parts
-                const before = line.substring(0, excerptStartInLine);
-                const highlighted = line.substring(excerptStartInLine, excerptEndInLine);
-                const after = line.substring(excerptEndInLine);
-
-                return (
-                  <div key={idx} ref={highlightRef} className="text-sm whitespace-pre-wrap break-words mb-1">
-                    <span className="text-foreground">{before}</span>
-                    <mark className="bg-primary/30 dark:bg-primary/40 text-foreground px-1 rounded">
-                      {highlighted}
-                    </mark>
-                    <span className="text-foreground">{after}</span>
-                  </div>
-                );
-              }
-
               return (
-                <div key={idx} className="text-sm text-foreground whitespace-pre-wrap break-words mb-1">
-                  {line || '\n'}
+                <div
+                  key={idx}
+                  ref={isFirstHighlightedLine ? highlightRef : null}
+                  className={`py-1 px-2 rounded text-sm whitespace-pre-wrap break-words ${
+                    isHighlighted 
+                      ? 'border-l-4 border-primary bg-primary/20 dark:bg-primary/30' 
+                      : 'hover:bg-muted/50'
+                  }`}
+                >
+                  <span className={isHighlighted ? 'font-medium text-foreground' : 'text-foreground'}>
+                    {line || '\u00A0'}
+                  </span>
                 </div>
               );
             })}

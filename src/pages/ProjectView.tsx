@@ -320,7 +320,7 @@ export default function ProjectView() {
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Sources Panel (Left) - hidden on mobile */}
-        <div className="hidden lg:block">
+        <div className="hidden lg:flex h-full">
           <SourcePanel
             sources={sources}
             onRemoveSource={handleRemoveSource}
