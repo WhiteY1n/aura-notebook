@@ -245,10 +245,15 @@ export default function Auth() {
             <CardTitle className="text-2xl font-bold">
               {isLogin ? "Welcome back" : "Create account"}
             </CardTitle>
-            <CardDescription>
-              {isLogin
-                ? "Sign in to access your notebooks"
-                : "Get started with your AI study assistant"}
+            <CardDescription className="space-y-1">
+              <div className="text-base font-medium text-foreground/80">
+                Transform your learning with AI-powered study notebooks
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {isLogin
+                  ? "Sign in to access your personalized study materials"
+                  : "Create intelligent notes, generate summaries, and enhance your learning experience"}
+              </div>
             </CardDescription>
           </CardHeader>
 

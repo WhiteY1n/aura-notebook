@@ -2,20 +2,18 @@
 
 A modern AI-powered study and research platform built with React, TypeScript, and Supabase. Transform your documents into interactive learning experiences with AI-generated summaries, notes, and audio overviews.
 
-## ✨ Features
+## Features
 
-- 📚 **Document Management**: Upload and organize PDFs, add web links, or paste content directly
-- 💬 **AI Chat**: Interactive conversations with your documents using RAG (Retrieval-Augmented Generation)
-- 📝 **Smart Notes**: Save and organize insights from AI conversations with citation tracking
-- 🎧 **Audio Overviews**: Generate podcast-style audio summaries of your content
-- 🔍 **Vector Search**: Semantic search across your document collection (optional)
-- 🎨 **Modern UI**: Clean, responsive interface built with shadcn/ui and Tailwind CSS
-- 🔐 **Secure Auth**: Email authentication powered by Supabase
-- 📱 **Responsive**: Works seamlessly on desktop, tablet, and mobile devices
+- **Document Management**: Upload and organize PDFs, add web links, or paste content directly
+- **AI Chat**: Interactive conversations with your documents using RAG (Retrieval-Augmented Generation)
+- **Smart Notes**: Save and organize insights from AI conversations with citation tracking
+- **Audio Overviews**: Generate podcast-style audio summaries of your content
+- **Vector Search**: Semantic search across your document collection (optional)
+- **Modern UI**: Clean, responsive interface built with shadcn/ui and Tailwind CSS
+- **Secure Auth**: Email authentication powered by Supabase
+- **Responsive**: Works seamlessly on desktop, tablet, and mobile devices
 
-## 🚀 Tech Stack
-
-## 🚀 Tech Stack
+## Tech Stack
 
 This project is built with:
 
@@ -37,13 +35,13 @@ This project is built with:
   - OpenAI API - Text generation and embeddings
   - Supabase Vector Store - Semantic search capabilities
 
-## 📋 Prerequisites
+## Prerequisites
 
 - Node.js 18+ and pnpm
 - Supabase account (free tier available)
 - (Optional) n8n instance and OpenAI API key for AI features
 
-## 🛠️ Installation
+## Installation
 
 1. **Clone the repository**
    ```bash
@@ -85,7 +83,7 @@ This project is built with:
 
    The app will be available at `http://localhost:8080`
 
-## 🧪 Development
+## Development
 
 ```bash
 # Run development server
@@ -104,7 +102,7 @@ pnpm lint
 pnpm exec tsc --noEmit
 ```
 
-## 📦 Build & Deployment
+## Build & Deployment
 
 ### Build
 ```bash
@@ -135,30 +133,27 @@ netlify deploy --prod
 
 **Other platforms**: Upload the `dist/` folder to any static hosting service (Cloudflare Pages, GitHub Pages, etc.)
 
-## 🤖 AI Features Setup (Optional)
 
-## 🤖 AI Features Setup (Optional)
+## AI Features Setup (Optional)
 
 Aura Study works in two modes:
 
-### 📌 Simple Mode (Default)
+### Simple Mode (Default)
 Perfect for getting started quickly:
-- ✅ File upload and management
-- ✅ Basic chat functionality
-- ✅ Notes organization
-- ✅ File-based metadata
-- ❌ No AI-generated content
-- ❌ No semantic search
+- File upload and management
+- Basic chat functionality
+- Notes organization
+- File-based metadata
 
-### 🚀 Full AI Mode (Requires n8n + OpenAI)
+### Full AI Mode (Requires n8n + OpenAI)
 Unlock the full potential:
-- ✅ All Simple Mode features
-- ✅ AI-generated titles, descriptions, and icons
-- ✅ Smart document summaries with key insights
-- ✅ Automated example questions generation
-- ✅ Vector-based semantic search with citations
-- ✅ Context-aware AI responses with source references
-- ✅ Audio podcast generation
+- All Simple Mode features
+- AI-generated titles, descriptions, and icons
+- Smart document summaries with key insights
+- Automated example questions generation
+- Vector-based semantic search with citations
+- Context-aware AI responses with source references
+- Audio podcast generation
 
 **Setup guides:**
 - Detailed setup: [N8N_SETUP_GUIDE.md](./N8N_SETUP_GUIDE.md)
@@ -170,7 +165,7 @@ Unlock the full potential:
 - ~15-20 minutes setup time
 - Monthly cost: $1-5 for typical usage
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 aura-study/
@@ -198,7 +193,7 @@ aura-study/
 └── public/              # Static assets
 ```
 
-## ⚙️ Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -227,7 +222,7 @@ supabase functions deploy process-document-callback
 supabase functions deploy audio-generation-callback
 ```
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
@@ -237,11 +232,11 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📝 License
+## License
 
 This project is open source and available under the [MIT License](LICENSE).
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Built with [shadcn/ui](https://ui.shadcn.com/) components
 - Powered by [Supabase](https://supabase.com/)
@@ -249,4 +244,4 @@ This project is open source and available under the [MIT License](LICENSE).
 
 ---
 
-**Made with ❤️ for learners and researchers**
+**Made for learners and researchers**
