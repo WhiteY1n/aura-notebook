@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -45,6 +45,7 @@ import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
 import { mockGeneratedItems } from "@/mocks/studio";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 export default function ProjectView() {
   const { id } = useParams();
@@ -56,7 +57,6 @@ export default function ProjectView() {
 
   const { notebooks, isLoading: notebooksLoading } = useNotebooks();
   const { sources: sourcesData, isLoading: sourcesLoading } = useSources(id);
-  const { deleteSource } = useSourceDelete();
   const {
     messages: chatMessages,
     sendMessage,
@@ -81,6 +81,16 @@ export default function ProjectView() {
     new Set()
   );
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const project = notebooks?.find((nb) => nb.id === id);
+  const isLoading = notebooksLoading || sourcesLoading;
+  const pageTitle = useMemo(() => {
+    if (project?.title) {
+      return `${project.title} | Aura Notebook`;
+    }
+    return "Aura Notebook | Project";
+  }, [project?.title]);
+
+  useDocumentTitle(pageTitle);
   const [highlightedCitation, setHighlightedCitation] = useState<{
     citation_id: string;
     source_id: string;
@@ -90,9 +100,6 @@ export default function ProjectView() {
     chunk_lines_to?: number;
   } | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-
-  const project = notebooks?.find((nb) => nb.id === id);
-  const isLoading = notebooksLoading || sourcesLoading;
 
   const sources: Source[] = (sourcesData || []).map((s) => ({
     id: s.id,

@@ -14,6 +14,7 @@ import { useNotebookDelete } from "@/hooks/useNotebookDelete";
 import { useNotebookUpdate } from "@/hooks/useNotebookUpdate";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import {
   Pagination,
   PaginationContent,
@@ -40,6 +41,8 @@ export default function Dashboard() {
   const [layout, setLayout] = useState<"grid" | "list">("grid");
   const [sortOption, setSortOption] = useState<SortOption>("date");
   const [currentPage, setCurrentPage] = useState(1);
+
+  useDocumentTitle("Aura Notebook | Dashboard");
 
   // Transform notebooks to projects format
   const projects = useMemo(() => {

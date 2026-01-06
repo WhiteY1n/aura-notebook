@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useRef } from 'react';
+import { useMemo, useEffect, useRef } from "react";
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -42,6 +42,7 @@ export function SourceContentViewer({
 }: SourceContentViewerProps) {
   const highlightRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const lastCitationIdRef = useRef<string | undefined>(undefined);
 
   // Split content into lines for better rendering
   const contentLines = useMemo(() => {
@@ -62,19 +63,33 @@ export function SourceContentViewer({
   // Auto-scroll to highlighted text
   useEffect(() => {
     if (hasValidCitationLines && highlightRef.current && scrollAreaRef.current) {
-      const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
-      if (viewport && highlightRef.current) {
+      const viewport = scrollAreaRef.current.querySelector(
+        "[data-radix-scroll-area-viewport]"
+      ) as HTMLElement | null;
+
+      const shouldScroll =
+        highlightedCitation?.citation_id !== lastCitationIdRef.current ||
+        (viewport && highlightRef.current
+          ? Math.abs(
+              highlightRef.current.offsetTop - viewport.scrollTop
+            ) > viewport.clientHeight / 2
+          : false);
+
+      if (shouldScroll && viewport) {
+        lastCitationIdRef.current = highlightedCitation?.citation_id;
         setTimeout(() => {
           const highlightedElement = highlightRef.current;
           if (highlightedElement && viewport) {
-            // Calculate scroll position to center the highlighted content
-            const scrollTop = highlightedElement.offsetTop - (viewport.clientHeight / 2) + (highlightedElement.clientHeight / 2);
+            const scrollTop =
+              highlightedElement.offsetTop -
+              viewport.clientHeight / 2 +
+              highlightedElement.clientHeight / 2;
             viewport.scrollTo({
               top: Math.max(0, scrollTop),
-              behavior: 'smooth'
+              behavior: "smooth",
             });
           }
-        }, 200);
+        }, 150);
       }
     }
   }, [highlightedCitation?.citation_id, highlightedCitation?.chunk_lines_from, hasValidCitationLines]);
@@ -159,21 +174,32 @@ export function SourceContentViewer({
 
       {/* Content */}
       <ScrollArea className="flex-1 h-full" ref={scrollAreaRef}>
-        <div className="p-6 max-w-4xl">
-          <div className="prose prose-sm max-w-none dark:prose-invert space-y-1">
+        <div className="p-6 w-full">
+          <div className="prose prose-sm max-w-none dark:prose-invert space-y-0 w-full">
             {contentLines.map((line, idx) => {
               const lineNumber = idx + 1; // Lines are 1-indexed
               const isHighlighted = startLine > 0 && lineNumber >= startLine && lineNumber <= endLine;
               const isFirstHighlightedLine = isHighlighted && lineNumber === startLine;
+              const prevHighlighted =
+                startLine > 0 && lineNumber - 1 >= startLine && lineNumber - 1 <= endLine;
+              const shouldAddGapAbove = idx !== 0 && !(isHighlighted && prevHighlighted);
+              const topGapClass = shouldAddGapAbove ? "mt-1" : "";
+              const highlightRadiusClass = isHighlighted
+                ? lineNumber === startLine
+                  ? "rounded-t"
+                  : lineNumber === endLine
+                    ? "rounded-b"
+                    : ""
+                : "rounded";
               
               return (
                 <div
                   key={idx}
                   ref={isFirstHighlightedLine ? highlightRef : null}
-                  className={`py-1 px-2 rounded text-sm whitespace-pre-wrap break-words ${
+                  className={`py-1 px-2 text-sm whitespace-pre-wrap break-words ${topGapClass} ${highlightRadiusClass} ${
                     isHighlighted 
-                      ? 'border-l-4 border-primary bg-primary/20 dark:bg-primary/30' 
-                      : 'hover:bg-muted/50'
+                      ? 'border border-primary bg-primary/20 dark:bg-primary/30'
+                      : 'border border-transparent hover:bg-muted/50'
                   }`}
                 >
                   <span className={isHighlighted ? 'font-medium text-foreground' : 'text-foreground'}>

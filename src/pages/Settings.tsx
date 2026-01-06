@@ -25,6 +25,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAvatarUpload } from "@/hooks/useAvatarUpload";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import {
   ArrowLeft,
   Moon,
@@ -44,6 +45,8 @@ export default function Settings() {
   const { toast } = useToast();
   const { uploadAvatar, isUploading } = useAvatarUpload();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useDocumentTitle("Aura Notebook | Settings");
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");

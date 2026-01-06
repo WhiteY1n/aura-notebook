@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Mail, Lock, User, Sparkles, Eye, EyeOff, Sun, Moon } from "lucide-react";
 import EmailConfirmation from "@/features/auth/EmailConfirmation";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -52,10 +53,7 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Set page title for branding on auth page
-  useEffect(() => {
-    document.title = "Aura Notebook | Login";
-  }, []);
+  useDocumentTitle("Aura Notebook | Login");
 
   // Redirect if already logged in
   useEffect(() => {

@@ -1,4 +1,9 @@
-import { useState } from "react";
+import {
+  useState,
+  useCallback,
+  useEffect,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   File,
@@ -113,6 +118,8 @@ export function SourcePanel({
   highlightedCitation,
 }: SourcePanelProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [panelWidth, setPanelWidth] = useState(320);
+  const [isResizing, setIsResizing] = useState(false);
   const [deleteSourceId, setDeleteSourceId] = useState<string | null>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [selectedSourceForViewing, setSelectedSourceForViewing] = useState<Source | null>(
@@ -151,16 +158,74 @@ export function SourcePanel({
     onSourceViewerChange?.(null);
   };
 
+  useEffect(() => {
+    const handleWindowResize = () => {
+      setPanelWidth((current) => {
+        const minWidth = 240;
+        const maxWidth = Math.max(minWidth, window.innerWidth * 0.6);
+        return Math.min(current, maxWidth);
+      });
+    };
+
+    window.addEventListener("resize", handleWindowResize);
+    return () => window.removeEventListener("resize", handleWindowResize);
+  }, []);
+
+  const handleResizeStart = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (isCollapsed) return;
+      event.preventDefault();
+      event.stopPropagation();
+
+      const startX = event.clientX;
+      const startWidth = panelWidth;
+      const minWidth = 240;
+      const viewportWidth = typeof window !== "undefined" ? window.innerWidth : 0;
+      const maxWidth = Math.max(minWidth, viewportWidth * 0.6);
+      setIsResizing(true);
+
+      const handlePointerMove = (moveEvent: PointerEvent) => {
+        const deltaX = moveEvent.clientX - startX;
+        const nextWidth = Math.min(maxWidth, Math.max(minWidth, startWidth + deltaX));
+        setPanelWidth(nextWidth);
+      };
+
+      const handlePointerUp = () => {
+        setIsResizing(false);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+        window.removeEventListener("pointermove", handlePointerMove);
+        window.removeEventListener("pointerup", handlePointerUp);
+      };
+
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+
+      window.addEventListener("pointermove", handlePointerMove);
+      window.addEventListener("pointerup", handlePointerUp);
+    },
+    [isCollapsed, panelWidth]
+  );
+
   return (
     <>
       <motion.div
         initial={false}
         animate={{
-          width: isCollapsed ? "60px" : "320px",
+          width: isCollapsed ? "60px" : `${panelWidth}px`,
         }}
-        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-        className="relative shrink-0 bg-background border-r border-border/60 dark:border-border/40 flex flex-col h-full overflow-hidden"
+        transition={isResizing ? { duration: 0 } : { duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+        className="relative z-10 shrink-0 bg-background border-r border-border/60 dark:border-border/40 flex flex-col h-full overflow-hidden"
       >
+        {!isCollapsed && (
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize sources panel"
+            onPointerDown={handleResizeStart}
+            className="absolute top-0 right-0 z-10 h-full w-1 cursor-col-resize bg-transparent transition-colors hover:bg-primary/30"
+          />
+        )}
         {/* Show source content viewer if a source is selected for viewing */}
         {activeSourceForViewing ? (
           <SourceContentViewer
