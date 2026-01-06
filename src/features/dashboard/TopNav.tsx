@@ -1,6 +1,6 @@
 import { Moon, Sun, Sparkles, Settings, LogOut } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 
 interface TopNavProps {
@@ -34,13 +35,15 @@ export function TopNav({ onCreateProject }: TopNavProps) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   const handleLogout = async () => {
     await signOut();
     navigate("/auth");
   };
 
-  const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
+  const userName =
+    user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
   const userEmail = user?.email || "user@example.com";
   const initials = userName
     .split(" ")
@@ -48,6 +51,29 @@ export function TopNav({ onCreateProject }: TopNavProps) {
     .join("")
     .toUpperCase()
     .slice(0, 2);
+
+  // Load user avatar
+  useEffect(() => {
+    const loadUserAvatar = async () => {
+      if (!user?.id) return;
+
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("avatar_url")
+          .eq("id", user.id)
+          .single();
+
+        if (!error && data?.avatar_url) {
+          setAvatarUrl(data.avatar_url);
+        }
+      } catch (error) {
+        console.error("Error loading avatar:", error);
+      }
+    };
+
+    loadUserAvatar();
+  }, [user?.id]);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-xl">
@@ -62,7 +88,9 @@ export function TopNav({ onCreateProject }: TopNavProps) {
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
               <Sparkles className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="font-semibold text-lg hidden sm:inline-block">Aura Study</span>
+            <span className="font-semibold text-lg hidden sm:inline-block">
+              Aura Study
+            </span>
           </motion.div>
         </Link>
 
@@ -76,7 +104,11 @@ export function TopNav({ onCreateProject }: TopNavProps) {
               onClick={() => setTheme(isDark ? "light" : "dark")}
               className="text-muted-foreground hover:text-foreground"
             >
-              {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              {isDark ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
             </Button>
           </motion.div>
 
@@ -89,8 +121,10 @@ export function TopNav({ onCreateProject }: TopNavProps) {
                 className="rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               >
                 <Avatar className="h-8 w-8 cursor-pointer">
-                  <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${userEmail}`} alt={userName} />
-                  <AvatarFallback className="bg-primary text-primary-foreground text-sm">{initials}</AvatarFallback>
+                  <AvatarImage src={avatarUrl || undefined} alt={userName} />
+                  <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                    {initials}
+                  </AvatarFallback>
                 </Avatar>
               </motion.button>
             </DropdownMenuTrigger>
@@ -103,13 +137,16 @@ export function TopNav({ onCreateProject }: TopNavProps) {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link to="/settings" className="flex items-center cursor-pointer">
+                <Link
+                  to="/settings"
+                  className="flex items-center cursor-pointer"
+                >
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="text-destructive focus:text-destructive cursor-pointer"
                 onClick={() => setShowLogoutDialog(true)}
               >
