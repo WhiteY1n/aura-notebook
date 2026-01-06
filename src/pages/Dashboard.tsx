@@ -171,11 +171,11 @@ export default function Dashboard() {
 
             {/* Create button */}
             <FadeIn delay={0.1}>
-              <Button onClick={handleCreateProject} className="gap-2" disabled={isCreating}>
+              <Button onClick={handleCreateProject} className="gap-2 select-none" disabled={isCreating}>
                 {isCreating ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-4 w-4 " />
                 )}
                 Create new
               </Button>
@@ -221,7 +221,7 @@ export default function Dashboard() {
                 {/* Pagination */}
                 {totalPages > 1 && (
                   <FadeIn delay={0.2}>
-                    <Pagination className="mt-8">
+                    <Pagination className="mt-8 select-none">
                       <PaginationContent>
                         <PaginationItem>
                           <PaginationPrevious

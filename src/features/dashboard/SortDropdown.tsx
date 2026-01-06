@@ -27,7 +27,7 @@ export function SortDropdown({ value, onValueChange }: SortDropdownProps) {
       transition={{ duration: 0.15 }}
     >
       <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger className="min-w-[140px] w-[140px] bg-background border border-border h-10">
+        <SelectTrigger className="min-w-[140px] w-[140px] bg-background border border-border h-10 select-none">
           <ArrowUpDown className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
           <SelectValue placeholder="Sort by" />
         </SelectTrigger>

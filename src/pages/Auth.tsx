@@ -3,13 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { z } from "zod";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/hooks/useTheme";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Mail, Lock, User, Sparkles, Eye, EyeOff } from "lucide-react";
+import { Loader2, Mail, Lock, User, Sparkles, Eye, EyeOff, Sun, Moon } from "lucide-react";
 import EmailConfirmation from "@/features/auth/EmailConfirmation";
 
 const loginSchema = z.object({
@@ -36,6 +37,7 @@ const signUpSchema = z.object({
 export default function Auth() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { setTheme, isDark } = useTheme();
   const { toast } = useToast();
   
   const [isLogin, setIsLogin] = useState(true);
@@ -49,6 +51,11 @@ export default function Auth() {
   const [pendingEmail, setPendingEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Set page title for branding on auth page
+  useEffect(() => {
+    document.title = "Aura Notebook | Login";
+  }, []);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -225,27 +232,46 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-secondary/20 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-secondary/20 p-4 select-none">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-        className="w-full max-w-md"
+        className="w-full max-w-md space-y-4"
       >
+        
+
         <Card className="border-border/50 shadow-2xl">
-          <CardHeader className="text-center space-y-2">
+          <div className="flex justify-end p-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Toggle theme"
+              onClick={() => setTheme(isDark ? "light" : "dark")}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
+          </div>
+          <CardHeader className="text-center space-y-2 select-none">
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
               className="mx-auto w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-2"
             >
-              <Sparkles className="h-7 w-7 text-primary" />
+              <img
+                src="/icon.svg"
+                alt="Aura Notebook"
+                className="h-8 w-8"
+              />
             </motion.div>
-            <CardTitle className="text-2xl font-bold">
+            <div className="text-sm font-semibold text-primary">Aura Notebook</div>
+            <CardTitle className="text-2xl font-bold select-none">
               {isLogin ? "Welcome back" : "Create account"}
             </CardTitle>
-            <CardDescription className="space-y-1">
+            <CardDescription className="space-y-1 select-none">
               <div className="text-base font-medium text-foreground/80">
                 Transform your learning with AI-powered study notebooks
               </div>
@@ -266,8 +292,8 @@ export default function Auth() {
                   exit={{ opacity: 0, height: 0 }}
                   className="space-y-2"
                 >
-                  <Label htmlFor="fullName">Full name</Label>
-                  <div className="relative">
+                  <Label htmlFor="fullName" className="select-none">Full name</Label>
+                  <div className="relative select-none">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="fullName"
@@ -285,8 +311,8 @@ export default function Auth() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
+                <Label htmlFor="email" className="select-none">Email</Label>
+                <div className="relative select-none">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="email"
@@ -304,8 +330,8 @@ export default function Auth() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
+                <Label htmlFor="password" className="select-none">Password</Label>
+                <div className="relative select-none">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="password"
@@ -337,7 +363,7 @@ export default function Auth() {
                   className="space-y-2"
                 >
                   <Label htmlFor="confirmPassword">Confirm password</Label>
-                  <div className="relative">
+                  <div className="relative select-none">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="confirmPassword"
@@ -368,7 +394,7 @@ export default function Auth() {
               )}
             </CardContent>
 
-            <CardFooter className="flex flex-col space-y-4">
+            <CardFooter className="flex flex-col space-y-4 select-none">
               <Button
                 type="submit"
                 className="w-full"

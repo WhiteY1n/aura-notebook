@@ -62,8 +62,8 @@ export function ProjectCard({ project, layout, onRename, onDelete }: ProjectCard
           variant="ghost" 
           size="icon-sm" 
           className={cn(
-            "flex-shrink-0",
-            layout === "grid" && "absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-card/80 backdrop-blur-sm"
+            "flex-shrink-0 ",
+            layout === "grid" && "absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-card/80 backdrop-blur-sm "
           )}
         >
           <MoreVertical className="h-4 w-4" />
@@ -131,7 +131,7 @@ export function ProjectCard({ project, layout, onRename, onDelete }: ProjectCard
             whileTap={{ scale: 0.995 }}
             transition={{ type: "spring", stiffness: 400, damping: 17 }}
           >
-            <Card variant="interactive" className="flex items-center gap-4 p-4">
+            <Card variant="interactive" className="flex items-center gap-4 p-4 select-none">
               <div className="h-12 w-12 flex items-center justify-center flex-shrink-0">
                 <span className="text-3xl leading-none">{project.icon || '📝'}</span>
               </div>
@@ -162,7 +162,7 @@ export function ProjectCard({ project, layout, onRename, onDelete }: ProjectCard
           whileTap={{ scale: 0.98 }}
           transition={{ type: "spring", stiffness: 400, damping: 17 }}
         >
-          <Card variant="interactive" className="group relative overflow-hidden h-48">
+          <Card variant="interactive" className="group relative overflow-hidden h-48 select-none">
             {/* Content */}
             <div className="p-4 h-full flex flex-col">
               {/* Icon */}

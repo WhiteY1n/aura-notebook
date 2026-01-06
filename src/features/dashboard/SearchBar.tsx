@@ -17,8 +17,8 @@ export function SearchBar({
   className 
 }: SearchBarProps) {
   return (
-    <div className={cn("relative", className)}>
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+    <div className={cn("relative select-none", className)}>
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground " />
       <Input
         value={value}
         onChange={(e) => onChange(e.target.value)}

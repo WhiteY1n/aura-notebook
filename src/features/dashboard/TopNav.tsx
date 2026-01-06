@@ -80,18 +80,14 @@ export function TopNav({ onCreateProject }: TopNavProps) {
       <div className="flex h-14 items-center justify-between px-2 sm:px-4 max-w-full">
         {/* Logo */}
         <Link to="/dashboard" className="flex items-center gap-2">
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-2"
-          >
+
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
               <Sparkles className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="font-semibold text-lg hidden sm:inline-block">
-              Aura Study
+            <span className="font-semibold text-lg hidden sm:inline-block select-none">
+              Aura Notebook
             </span>
-          </motion.div>
+
         </Link>
 
         {/* Right side */}
