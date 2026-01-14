@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Mail, Lock, User, Sparkles, Eye, EyeOff, Sun, Moon } from "lucide-react";
-import EmailConfirmation from "@/features/auth/EmailConfirmation";
+import EmailConfirmation from "@/components/auth/EmailConfirmation";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 const loginSchema = z.object({

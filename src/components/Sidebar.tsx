@@ -1,15 +1,19 @@
+"use client";
+
 import { useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
-import { 
-  LayoutDashboard, 
-  FileText, 
-  Brain, 
-  Settings, 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  LayoutDashboard,
+  FileText,
+  Settings,
   ChevronLeft,
   ChevronRight,
   Sparkles,
-  ListChecks
+  ListChecks,
+  type LucideIcon,
 } from "lucide-react";
+import type { Route } from "next";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -17,17 +21,16 @@ interface SidebarProps {
   className?: string;
 }
 
-const navItems = [
+const navItems: { icon: LucideIcon; label: string; path: string }[] = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: FileText, label: "Documents", path: "/viewer/demo" },
-  { icon: Brain, label: "Flashcards", path: "/flashcards/demo" },
   { icon: ListChecks, label: "Summary", path: "/summary/demo" },
   { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
 export function Sidebar({ className }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
-  const location = useLocation();
+  const pathname = usePathname();
 
   return (
     <aside
@@ -54,13 +57,13 @@ export function Sidebar({ className }: SidebarProps) {
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           const pathBase = item.path.split("/")[1];
-          const currentBase = location.pathname.split("/")[1];
+          const currentBase = (pathname || "").split("/")[1];
           const isActive = pathBase === currentBase;
-          
+
           return (
-            <NavLink
+            <Link
               key={item.path}
-              to={item.path}
+              href={item.path as Route}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
                 collapsed ? "justify-center" : "",
@@ -71,7 +74,7 @@ export function Sidebar({ className }: SidebarProps) {
             >
               <item.icon className={cn("h-5 w-5 flex-shrink-0", isActive && "text-sidebar-primary")} />
               {!collapsed && <span>{item.label}</span>}
-            </NavLink>
+            </Link>
           );
         })}
       </nav>

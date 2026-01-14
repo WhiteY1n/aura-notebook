@@ -17,6 +17,13 @@ interface SourceContentViewerProps {
   sourceUrl?: string;
   sourceType?: string;
   onClose?: () => void;
+  highlightedCitation?: {
+    citation_id?: string;
+    source_id?: string;
+    excerpt?: string;
+    chunk_lines_from?: number;
+    chunk_lines_to?: number;
+  } | null;
 }
 
 export function SourceContentViewer({ 
@@ -26,6 +33,7 @@ export function SourceContentViewer({
   sourceUrl,
   sourceType,
   onClose,
+  highlightedCitation: _highlightedCitation,
 }: SourceContentViewerProps) {
   // Split content into lines for better rendering
   const contentLines = useMemo(() => {

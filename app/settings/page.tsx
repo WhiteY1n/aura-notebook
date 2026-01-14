@@ -1,7 +1,7 @@
 "use client";
 
 import Settings from "@/pages/Settings";
-import { ProtectedRoute } from "@/features/auth/ProtectedRoute";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 export default function SettingsPage() {
   return (

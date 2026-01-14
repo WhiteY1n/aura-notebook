@@ -1,11 +1,16 @@
-import { useState } from "react";
-import { Outlet } from "react-router-dom";
+"use client";
+
+import { useState, type ReactNode } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
-export function AppLayout() {
+interface AppLayoutProps {
+  children: ReactNode;
+}
+
+export function AppLayout({ children }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -29,7 +34,7 @@ export function AppLayout() {
 
       {/* Main Content */}
       <main className="flex-1 min-w-0 overflow-x-hidden">
-        <Outlet />
+        {children}
       </main>
     </div>
   );

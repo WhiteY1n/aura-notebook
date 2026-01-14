@@ -96,7 +96,7 @@ export function AddCopiedTextDialog({
 
     try {
       const { error } = await supabase.from("sources").insert({
-        project_id: projectId,
+        notebook_id: projectId,
         title: title.trim(),
         type: "text",
         content: content.trim(),
