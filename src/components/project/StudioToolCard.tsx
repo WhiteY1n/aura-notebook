@@ -1,10 +1,13 @@
-import { Link } from "react-router-dom";
-import { Pencil, Layers, HelpCircle, Brain, Headphones, FileText, Presentation, LucideIcon } from "lucide-react";
+"use client";
+
+import Link from "next/link";
+import type { Route } from "next";
+import { Pencil, HelpCircle, Brain, Headphones, FileText, Presentation, LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
-export type ToolType = "flashcards" | "quiz" | "mindmap" | "audio" | "summary" | "slides";
+export type ToolType = "quiz" | "mindmap" | "audio" | "summary" | "slides";
 
 interface StudioToolCardProps {
   type: ToolType;
@@ -13,20 +16,13 @@ interface StudioToolCardProps {
   onEdit?: () => void;
 }
 
-const toolConfig: Record<ToolType, { 
-  icon: LucideIcon; 
-  label: string; 
+const toolConfig: Record<ToolType, {
+  icon: LucideIcon;
+  label: string;
   description: string;
   colorClass: string;
   bgClass: string;
 }> = {
-  flashcards: {
-    icon: Layers,
-    label: "Flashcards",
-    description: "Study with AI-generated cards",
-    colorClass: "text-tool-flashcard",
-    bgClass: "bg-tool-flashcard/10",
-  },
   quiz: {
     icon: HelpCircle,
     label: "Quiz",
@@ -68,19 +64,17 @@ export function StudioToolCard({ type, projectId, generatedCount, onEdit }: Stud
   const config = toolConfig[type];
   const Icon = config.icon;
 
-  const getLink = () => {
+  const getLink = (): Route => {
     switch (type) {
-      case "flashcards":
-        return `/flashcards/${projectId}`;
       case "summary":
-        return `/summary/${projectId}`;
+        return `/summary/${projectId}` as Route;
       default:
-        return "#";
+        return "/" as Route;
     }
   };
 
   return (
-    <Link to={getLink()}>
+    <Link href={getLink()}>
       <motion.div
         whileHover={{ scale: 1.02, y: -2 }}
         whileTap={{ scale: 0.98 }}

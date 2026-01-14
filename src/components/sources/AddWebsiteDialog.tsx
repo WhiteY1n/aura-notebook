@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useSources } from "@/hooks/useSources";
 
 interface AddWebsiteDialogProps {
   open: boolean;
@@ -31,6 +32,7 @@ export function AddWebsiteDialog({
   const { toast } = useToast();
   const [textareaValue, setTextareaValue] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { addSourceAsync } = useSources(projectId);
 
   const validUrls = useMemo(() => {
     return textareaValue
@@ -54,43 +56,71 @@ export function AddWebsiteDialog({
     setIsSubmitting(true);
 
     try {
-      let successCount = 0;
-      let errorCount = 0;
+      console.log('Creating sources for multiple websites:', validUrls.length);
+      console.log('URLs:', validUrls);
+      console.log('Project ID:', projectId);
+      
+      // Create sources using addSourceAsync (first one will trigger generation)
+      const createdSources: Awaited<ReturnType<typeof addSourceAsync>>[] = [];
+      for (let i = 0; i < validUrls.length; i++) {
+        const url = validUrls[i];
+        console.log(`Creating source ${i + 1}/${validUrls.length}:`, url);
+        
+        const source = await addSourceAsync({
+          notebookId: projectId,
+          title: `Website ${i + 1}: ${extractDomain(url)}`,
+          type: 'website',
+          url: url,  // Use url field, not content
+          processing_status: 'processing',
+          metadata: {
+            originalUrl: url,
+            webhookProcessed: true
+          }
+        });
+        
+        createdSources.push(source);
+        console.log(`Source ${i + 1} created:`, source.id);
+      }
+      
+      console.log('All sources created successfully:', createdSources.length);
 
-      for (const url of validUrls) {
-        const { error } = await supabase.from("sources").insert({
-          project_id: projectId,
-          title: extractDomain(url),
-          type: "website",
-          content: url,
+      // Send to webhook endpoint with all source IDs
+      if (createdSources.length > 0) {
+        console.log('Calling process-additional-sources edge function...');
+        const { data: webhookData, error: webhookError } = await supabase.functions.invoke('process-additional-sources', {
+          body: {
+            type: 'multiple-websites',
+            notebookId: projectId,
+            urls: validUrls,
+            sourceIds: createdSources.map(source => source.id),
+            timestamp: new Date().toISOString()
+          }
         });
 
-        if (error) {
-          console.error(`Failed to add ${url}:`, error.message);
-          errorCount++;
+        if (webhookError) {
+          console.error('Webhook error:', webhookError);
+          console.error('Webhook error details:', JSON.stringify(webhookError));
+          // Don't throw - sources are created, show warning
+          toast({
+            title: "Partial success",
+            description: `${validUrls.length} website${validUrls.length > 1 ? "s" : ""} added but processing may be delayed. Error: ${webhookError.message}`,
+            variant: "default",
+          });
         } else {
-          successCount++;
+          console.log('Webhook response:', webhookData);
+          toast({
+            title: "Success",
+            description: `${validUrls.length} website${validUrls.length > 1 ? "s" : ""} added and sent for processing`,
+          });
         }
       }
 
-      if (successCount > 0) {
-        toast({
-          title: "Websites added",
-          description: `${successCount} website${successCount > 1 ? "s" : ""} added${errorCount > 0 ? `, ${errorCount} failed` : ""}`,
-        });
-
-        setTextareaValue("");
-        onOpenChange(false);
-        onSourceAdded?.();
-      } else {
-        toast({
-          title: "Failed to add websites",
-          description: "No websites could be added",
-          variant: "destructive",
-        });
-      }
+      setTextareaValue("");
+      onOpenChange(false);
+      onSourceAdded?.();
     } catch (error) {
       console.error("Error adding websites:", error);
+      console.error("Error details:", JSON.stringify(error, null, 2));
       toast({
         title: "Failed to add websites",
         description: error instanceof Error ? error.message : "Something went wrong",

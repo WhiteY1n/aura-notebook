@@ -1,6 +1,9 @@
+"use client";
+
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
-import { SummarySkeleton } from "@/components/LoadingSkeletons";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { SummarySkeleton } from "@/components/ui/skeletons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -9,22 +12,7 @@ import { ArrowLeft, FileDown, Moon, Sun, BookOpen, Lightbulb, Quote, Layers } fr
 import { useTheme } from "@/hooks/useTheme";
 import { cn } from "@/lib/utils";
 
-const mockSummary = {
-  overall: `Machine Learning (ML) is a transformative subset of artificial intelligence that enables computer systems to learn and improve automatically through experience.\n\nThe document covers three fundamental learning paradigms: supervised learning, unsupervised learning, and reinforcement learning.`,
-  keyInsights: [
-    { title: "Self-Improving Systems", content: "ML systems continuously improve without explicit reprogramming." },
-    { title: "Pattern Recognition", content: "The core strength of ML lies in identifying complex patterns." },
-    { title: "Diverse Applications", content: "From image recognition to fraud detection, ML spans virtually every industry." },
-  ],
-  passages: [
-    { text: "Machine learning focuses on the development of computer programs that can access data and use it to learn for themselves.", page: 1 },
-    { text: "The process of learning begins with observations or data... in order to look for patterns.", page: 1 },
-  ],
-  pageHighlights: [
-    { page: 1, highlights: ["Definition of Machine Learning", "Introduction to the learning process"] },
-    { page: 2, highlights: ["Unsupervised Learning techniques", "Reinforcement Learning concepts"] },
-  ],
-};
+import { mockSummary } from "@/mocks/summary";
 
 const navSections = [
   { id: "overall", label: "Overview", icon: BookOpen },
@@ -34,7 +22,8 @@ const navSections = [
 ];
 
 export default function Summary() {
-  const { id } = useParams();
+  const params = useParams<{ id: string }>();
+  const id = params?.id;
   const { setTheme, isDark } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
   const [activeSection, setActiveSection] = useState("overall");
@@ -47,7 +36,7 @@ export default function Summary() {
       <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-border/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14">
           <div className="flex items-center gap-3">
-            <Link to={`/project/${id}`}><Button variant="ghost" size="icon-sm"><ArrowLeft className="h-4 w-4" /></Button></Link>
+            <Link href={`/project/${id}`}><Button variant="ghost" size="icon-sm"><ArrowLeft className="h-4 w-4" /></Button></Link>
             <h1 className="font-semibold text-foreground">Summary</h1>
           </div>
           <div className="flex items-center gap-2">

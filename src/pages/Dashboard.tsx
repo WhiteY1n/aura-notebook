@@ -1,12 +1,14 @@
-import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, Loader2 } from "lucide-react";
-import { TopNav } from "@/components/dashboard/TopNav";
-import { SearchBar } from "@/components/dashboard/SearchBar";
-import { LayoutToggle } from "@/components/dashboard/LayoutToggle";
-import { SortDropdown, SortOption } from "@/components/dashboard/SortDropdown";
-import { ProjectCard, Project } from "@/components/dashboard/ProjectCard";
-import { EmptyState } from "@/components/dashboard/EmptyState";
+import { TopNav } from "@/features/dashboard/TopNav";
+import { SearchBar } from "@/features/dashboard/SearchBar";
+import { LayoutToggle } from "@/features/dashboard/LayoutToggle";
+import { SortDropdown, SortOption } from "@/features/dashboard/SortDropdown";
+import { ProjectCard, Project } from "@/features/dashboard/ProjectCard";
+import { EmptyState } from "@/features/dashboard/EmptyState";
 import { Button } from "@/components/ui/button";
 import { FadeIn } from "@/components/animations";
 import { useNotebooks } from "@/hooks/useNotebooks";
@@ -14,13 +16,25 @@ import { useNotebookDelete } from "@/hooks/useNotebookDelete";
 import { useNotebookUpdate } from "@/hooks/useNotebookUpdate";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 interface ProjectWithMeta extends Project {
   createdAt: Date;
 }
 
+const ITEMS_PER_PAGE = 12;
+
 export default function Dashboard() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { toast } = useToast();
   const { notebooks, isLoading, createNotebook, isCreating } = useNotebooks();
   const { deleteNotebook } = useNotebookDelete();
@@ -28,6 +42,9 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [layout, setLayout] = useState<"grid" | "list">("grid");
   const [sortOption, setSortOption] = useState<SortOption>("date");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useDocumentTitle("Aura Notebook | Dashboard");
 
   // Transform notebooks to projects format
   const projects = useMemo(() => {
@@ -55,6 +72,17 @@ export default function Dashboard() {
     return result;
   }, [projects, searchQuery, sortOption]);
 
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredAndSortedProjects.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedProjects = filteredAndSortedProjects.slice(startIndex, endIndex);
+
+  // Reset to page 1 when search or sort changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, sortOption]);
+
   const handleCreateProject = () => {
     createNotebook(
       {
@@ -67,7 +95,7 @@ export default function Dashboard() {
           // Wait a bit for the query to refetch
           await new Promise(resolve => setTimeout(resolve, 500));
           console.log('Navigating to notebook:', newNotebook.id);
-          navigate(`/project/${newNotebook.id}`);
+          router.push(`/project/${newNotebook.id}`);
         },
         onError: (error: any) => {
           console.error('Failed to create notebook:', error);
@@ -83,8 +111,8 @@ export default function Dashboard() {
 
   const handleRename = async (id: string, newTitle: string) => {
     try {
-      await updateNotebook.mutateAsync({
-        notebookId: id,
+      await updateNotebook({
+        id: id,
         updates: { title: newTitle },
       });
       
@@ -148,11 +176,11 @@ export default function Dashboard() {
 
             {/* Create button */}
             <FadeIn delay={0.1}>
-              <Button onClick={handleCreateProject} className="gap-2" disabled={isCreating}>
+              <Button onClick={handleCreateProject} className="gap-2 select-none" disabled={isCreating}>
                 {isCreating ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-4 w-4 " />
                 )}
                 Create new
               </Button>
@@ -165,32 +193,102 @@ export default function Dashboard() {
                   No notebooks found matching "{searchQuery}"
                 </p>
               </div>
-            ) : layout === "grid" ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {filteredAndSortedProjects.map((project, index) => (
-                  <FadeIn key={project.id} delay={index * 0.05}>
-                    <ProjectCard
-                      project={project}
-                      layout="grid"
-                      onRename={handleRename}
-                      onDelete={handleDelete}
-                    />
-                  </FadeIn>
-                ))}
-              </div>
             ) : (
-              <div className="space-y-2">
-                {filteredAndSortedProjects.map((project, index) => (
-                  <FadeIn key={project.id} delay={index * 0.03}>
-                    <ProjectCard
-                      project={project}
-                      layout="list"
-                      onRename={handleRename}
-                      onDelete={handleDelete}
-                    />
+              <>
+                {layout === "grid" ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {paginatedProjects.map((project, index) => (
+                      <FadeIn key={project.id} delay={index * 0.05}>
+                        <ProjectCard
+                          project={project}
+                          layout="grid"
+                          onRename={handleRename}
+                          onDelete={handleDelete}
+                        />
+                      </FadeIn>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {paginatedProjects.map((project, index) => (
+                      <FadeIn key={project.id} delay={index * 0.03}>
+                        <ProjectCard
+                          project={project}
+                          layout="list"
+                          onRename={handleRename}
+                          onDelete={handleDelete}
+                        />
+                      </FadeIn>
+                    ))}
+                  </div>
+                )}
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <FadeIn delay={0.2}>
+                    <Pagination className="mt-8 select-none">
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (currentPage > 1) setCurrentPage(currentPage - 1);
+                            }}
+                            className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+
+                        {/* Page numbers */}
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                          // Show first page, last page, current page, and pages around current
+                          const showPage =
+                            page === 1 ||
+                            page === totalPages ||
+                            (page >= currentPage - 1 && page <= currentPage + 1);
+
+                          const showEllipsisBefore = page === currentPage - 2 && currentPage > 3;
+                          const showEllipsisAfter = page === currentPage + 2 && currentPage < totalPages - 2;
+
+                          if (showEllipsisBefore || showEllipsisAfter) {
+                            return (
+                              <PaginationItem key={page}>
+                                <PaginationEllipsis />
+                              </PaginationItem>
+                            );
+                          }
+
+                          if (!showPage) return null;
+
+                          return (
+                            <PaginationItem key={page}>
+                              <PaginationLink
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setCurrentPage(page);
+                                }}
+                                isActive={currentPage === page}
+                                className="cursor-pointer"
+                              >
+                                {page}
+                              </PaginationLink>
+                            </PaginationItem>
+                          );
+                        })}
+
+                        <PaginationItem>
+                          <PaginationNext
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                            }}
+                            className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
                   </FadeIn>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </div>
         )}

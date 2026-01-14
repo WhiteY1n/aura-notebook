@@ -1,4 +1,8 @@
-import { Navigate, useLocation } from "react-router-dom";
+"use client";
+
+import { useEffect } from "react";
+import type { Route } from "next";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 
@@ -8,7 +12,16 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
-  const location = useLocation();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (loading) return;
+    if (!user) {
+      const redirectTo = pathname ? `?from=${encodeURIComponent(pathname)}` : "";
+      router.replace(`/auth${redirectTo}` as Route);
+    }
+  }, [loading, user, router, pathname]);
 
   if (loading) {
     return (
@@ -19,7 +32,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   if (!user) {
-    return <Navigate to="/auth" state={{ from: location }} replace />;
+    return null;
   }
 
   return <>{children}</>;

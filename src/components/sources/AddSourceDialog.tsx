@@ -127,7 +127,7 @@ export function AddSourceDialog({
       console.log('Creating first source for:', firstFile.name);
       const firstSource = await addSourceAsync(firstSourceData);
       
-      let remainingSources = [];
+      let remainingSources: typeof firstSource[] = [];
       
       // Step 2: If there are more files, add a delay before creating the rest
       if (files.length > 1) {

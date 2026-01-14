@@ -169,9 +169,15 @@ export const useSources = (notebookId?: string) => {
           
           if (canGenerate) {
             try {
+              // For text sources, don't pass filePath - let edge function query database
+              // For other sources, pass file_path or url
+              const sourceFilePath = (newSource.type === 'text') 
+                ? undefined 
+                : (newSource.file_path ?? newSource.url ?? undefined);
+              
               await generateNotebookContentAsync({
                 notebookId,
-                filePath: newSource.file_path || newSource.url,
+                filePath: sourceFilePath,
                 sourceType: newSource.type
               });
             } catch (error) {

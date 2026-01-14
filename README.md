@@ -1,99 +1,247 @@
-# Welcome to your Lovable project
+# Aura Study
 
-## Project info
+A modern AI-powered study and research platform built with React, TypeScript, and Supabase. Transform your documents into interactive learning experiences with AI-generated summaries, notes, and audio overviews.
 
-**URL**: https://lovable.dev/projects/de6e16e2-b666-4422-98d3-19645b61a23b
+## Features
 
-## How can I edit this code?
+- **Document Management**: Upload and organize PDFs, add web links, or paste content directly
+- **AI Chat**: Interactive conversations with your documents using RAG (Retrieval-Augmented Generation)
+- **Smart Notes**: Save and organize insights from AI conversations with citation tracking
+- **Audio Overviews**: Generate podcast-style audio summaries of your content
+- **Vector Search**: Semantic search across your document collection (optional)
+- **Modern UI**: Clean, responsive interface built with shadcn/ui and Tailwind CSS
+- **Secure Auth**: Email authentication powered by Supabase
+- **Responsive**: Works seamlessly on desktop, tablet, and mobile devices
 
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/de6e16e2-b666-4422-98d3-19645b61a23b) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
+## Tech Stack
 
 This project is built with:
 
-- **Frontend**: Vite, TypeScript, React, shadcn-ui, Tailwind CSS
-- **Backend**: Supabase (Database, Authentication, Storage, Edge Functions)
-- **AI Features**: n8n workflows, OpenAI API (optional)
-- **Vector Search**: Supabase Vector Store (optional)
+- **Frontend**: 
+  - [Vite](https://vitejs.dev/) - Next generation frontend tooling
+  - [React 18](https://react.dev/) - UI library
+  - [TypeScript](https://www.typescriptlang.org/) - Type safety
+  - [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS
+  - [shadcn/ui](https://ui.shadcn.com/) - Re-usable component library
+  - [Framer Motion](https://www.framer.com/motion/) - Animation library
+  - [TanStack Query](https://tanstack.com/query) - Data fetching and caching
+
+- **Backend**: 
+  - [Supabase](https://supabase.com/) - Database, Authentication, Storage, Edge Functions
+  - PostgreSQL with pgvector extension for semantic search
+
+- **AI & Automation** (Optional):
+  - [n8n](https://n8n.io/) - Workflow automation
+  - OpenAI API - Text generation and embeddings
+  - Supabase Vector Store - Semantic search capabilities
+
+## Prerequisites
+
+- Node.js 18+ and pnpm
+- Supabase account (free tier available)
+- (Optional) n8n instance and OpenAI API key for AI features
+
+## Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/aura-study.git
+   cd aura-study
+   ```
+
+2. **Install dependencies**
+   ```bash
+   pnpm install
+   ```
+
+3. **Set up Supabase**
+   - Create a new project at [supabase.com](https://supabase.com)
+   - Copy your project URL and anon key
+   - Run the database migrations:
+     ```bash
+     # Install Supabase CLI if you haven't
+     npm install -g supabase
+     
+     # Link your project
+     supabase link --project-ref your-project-ref
+     
+     # Push migrations
+     supabase db push
+     ```
+
+4. **Configure environment variables**
+   Create a `.env.local` file in the root directory:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+   ```
+
+5. **Start the development server**
+   ```bash
+   pnpm dev
+   ```
+
+   The app will be available at `http://localhost:3000`
+
+## Development
+
+```bash
+# Run development server
+pnpm dev
+
+# Build for production
+pnpm build
+
+# Preview production build
+pnpm preview
+
+# Run linter
+pnpm lint
+
+# Type check
+pnpm exec tsc --noEmit
+```
+
+## Build & Deployment
+
+### Build
+```bash
+pnpm build
+```
+
+The optimized production build will be in the `dist/` directory.
+
+### Deploy
+
+**Vercel** (Recommended)
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy
+vercel
+```
+
+**Netlify**
+```bash
+# Install Netlify CLI
+npm i -g netlify-cli
+
+# Deploy
+netlify deploy --prod
+```
+
+**Other platforms**: Upload the `dist/` folder to any static hosting service (Cloudflare Pages, GitHub Pages, etc.)
+
 
 ## AI Features Setup (Optional)
 
-Aura Study can work in two modes:
+Aura Study works in two modes:
 
-### Simple Mode (Current - Default)
-- ✅ File upload and management
-- ✅ Basic chat functionality
-- ✅ Notes and flashcards
-- ✅ File-based titles and icons
-- ❌ No AI-generated content
-- ❌ No semantic search
+### Simple Mode (Default)
+Perfect for getting started quickly:
+- File upload and management
+- Basic chat functionality
+- Notes organization
+- File-based metadata
 
-### Full AI Mode (Requires n8n)
-- ✅ All Simple Mode features
-- ✅ AI-generated titles and descriptions
-- ✅ Smart document summaries
-- ✅ Example questions generation
-- ✅ Vector-based semantic search
-- ✅ Citation-aware responses
+### Full AI Mode (Requires n8n + OpenAI)
+Unlock the full potential:
+- All Simple Mode features
+- AI-generated titles, descriptions, and icons
+- Smart document summaries with key insights
+- Automated example questions generation
+- Vector-based semantic search with citations
+- Context-aware AI responses with source references
+- Audio podcast generation
 
-**To enable Full AI Mode:**
-1. Follow the guide: [N8N_SETUP_GUIDE.md](./N8N_SETUP_GUIDE.md)
-2. Or quick start: [N8N_QUICK_START.md](./N8N_QUICK_START.md)
+**Setup guides:**
+- Detailed setup: [N8N_SETUP_GUIDE.md](./N8N_SETUP_GUIDE.md)
+- Quick start: [N8N_QUICK_START.md](./N8N_QUICK_START.md)
 
-**Estimated setup time**: 15-20 minutes  
-**Monthly cost**: $1-5 (for typical usage)
+**Requirements:**
+- n8n instance (self-hosted or cloud)
+- OpenAI API key
+- ~15-20 minutes setup time
+- Monthly cost: $1-5 for typical usage
 
-## How can I deploy this project?
+## Project Structure
 
-Simply open [Lovable](https://lovable.dev/projects/de6e16e2-b666-4422-98d3-19645b61a23b) and click on Share -> Publish.
+```
+aura-study/
+├── src/
+│   ├── components/      # Reusable UI components
+│   │   ├── chat/        # Chat-related components
+│   │   ├── project/     # Project/studio components
+│   │   ├── sources/     # Document management
+│   │   ├── ui/          # shadcn/ui components
+│   │   └── viewer/      # Document viewer components
+│   ├── contexts/        # React contexts (Auth, etc.)
+│   ├── features/        # Feature-based modules
+│   │   ├── auth/        # Authentication features
+│   │   └── dashboard/   # Dashboard features
+│   ├── hooks/           # Custom React hooks
+│   ├── integrations/    # Third-party integrations
+│   │   └── supabase/    # Supabase client & types
+│   ├── lib/             # Utility functions
+│   ├── pages/           # Page components
+│   ├── providers/       # React providers
+│   └── mocks/           # Mock data for development
+├── supabase/
+│   ├── functions/       # Supabase Edge Functions
+│   └── migrations/      # Database migrations
+└── public/              # Static assets
+```
 
-## Can I connect a custom domain to my Lovable project?
+## Configuration
 
-Yes, you can!
+### Environment Variables
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Create a `.env.local` file with the following variables:
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+```env
+# Supabase
+VITE_SUPABASE_URL=your-supabase-url
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+
+# Optional: n8n webhooks (for AI features)
+VITE_N8N_WEBHOOK_URL=your-n8n-webhook-url
+```
+
+### Supabase Edge Functions
+
+If using AI features, deploy the edge functions:
+
+```bash
+# Deploy all functions
+supabase functions deploy
+
+# Or deploy individually
+supabase functions deploy generate-notebook-content
+supabase functions deploy process-document-callback
+supabase functions deploy audio-generation-callback
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+## Acknowledgments
+
+- Built with [shadcn/ui](https://ui.shadcn.com/) components
+- Powered by [Supabase](https://supabase.com/)
+- Icons by [Lucide](https://lucide.dev/)
+
+---
+
+**Made for learners and researchers**

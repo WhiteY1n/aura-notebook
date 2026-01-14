@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 interface EmailConfirmationProps {
   email: string;
   onClose: () => void;
+  onResend?: () => void | Promise<void>;
 }
 
-export default function EmailConfirmation({ email, onClose }: EmailConfirmationProps) {
+export default function EmailConfirmation({ email, onClose, onResend }: EmailConfirmationProps) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-secondary/20 p-4">
       <motion.div
@@ -72,10 +73,17 @@ export default function EmailConfirmation({ email, onClose }: EmailConfirmationP
               </div>
             </div>
 
-            <div className="pt-4 border-t border-border">
+            <div className="pt-4 border-t border-border space-y-3">
               <p className="text-xs text-muted-foreground text-center">
                 Didn't receive the email? Check your spam folder or try signing up again.
               </p>
+              {onResend && (
+                <div className="flex justify-center">
+                  <Button variant="outline" size="sm" onClick={onResend}>
+                    Resend confirmation email
+                  </Button>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

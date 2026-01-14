@@ -42,7 +42,9 @@ export const useNotebookDelete = () => {
         console.log(`Found ${sources?.length || 0} sources to clean up`);
 
         // Delete all files from storage for sources that have file_path
-        const filesToDelete = sources?.filter(source => source.file_path).map(source => source.file_path) || [];
+        const filesToDelete = (sources ?? [])
+          .map(source => source.file_path)
+          .filter((path): path is string => Boolean(path));
         
         if (filesToDelete.length > 0) {
           console.log('Deleting files from storage:', filesToDelete);

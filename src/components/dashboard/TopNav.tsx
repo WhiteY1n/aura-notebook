@@ -1,5 +1,9 @@
-import { Moon, Sun, Sparkles, Settings, HelpCircle, MessageSquare, LogOut } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Moon, Sun, Sparkles, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -10,8 +14,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 
 interface TopNavProps {
@@ -21,14 +36,17 @@ interface TopNavProps {
 export function TopNav({ onCreateProject }: TopNavProps) {
   const { setTheme, isDark } = useTheme();
   const { user, signOut } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   const handleLogout = async () => {
     await signOut();
-    navigate("/auth");
+    router.push("/auth");
   };
 
-  const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
+  const userName =
+    user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
   const userEmail = user?.email || "user@example.com";
   const initials = userName
     .split(" ")
@@ -37,25 +55,46 @@ export function TopNav({ onCreateProject }: TopNavProps) {
     .toUpperCase()
     .slice(0, 2);
 
+  // Load user avatar
+  useEffect(() => {
+    const loadUserAvatar = async () => {
+      if (!user?.id) return;
+
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("avatar_url")
+          .eq("id", user.id)
+          .single();
+
+        if (!error && data?.avatar_url) {
+          setAvatarUrl(data.avatar_url);
+        }
+      } catch (error) {
+        console.error("Error loading avatar:", error);
+      }
+    };
+
+    loadUserAvatar();
+  }, [user?.id]);
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-xl">
-      <div className="flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div className="flex h-14 items-center justify-between px-2 sm:px-4 max-w-full">
         {/* Logo */}
-        <Link to="/dashboard" className="flex items-center gap-2">
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-2"
-          >
+        <Link href="/dashboard" className="flex items-center gap-2">
+
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
               <Sparkles className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="font-semibold text-lg hidden sm:inline-block">Aura Study</span>
-          </motion.div>
+            <span className="font-semibold text-lg hidden sm:inline-block select-none">
+              Aura Notebook
+            </span>
+
         </Link>
 
         {/* Right side */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           {/* Theme toggle */}
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button
@@ -64,7 +103,11 @@ export function TopNav({ onCreateProject }: TopNavProps) {
               onClick={() => setTheme(isDark ? "light" : "dark")}
               className="text-muted-foreground hover:text-foreground"
             >
-              {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              {isDark ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
             </Button>
           </motion.div>
 
@@ -77,8 +120,10 @@ export function TopNav({ onCreateProject }: TopNavProps) {
                 className="rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               >
                 <Avatar className="h-8 w-8 cursor-pointer">
-                  <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${userEmail}`} alt={userName} />
-                  <AvatarFallback className="bg-primary text-primary-foreground text-sm">{initials}</AvatarFallback>
+                  <AvatarImage src={avatarUrl || undefined} alt={userName} />
+                  <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                    {initials}
+                  </AvatarFallback>
                 </Avatar>
               </motion.button>
             </DropdownMenuTrigger>
@@ -91,23 +136,18 @@ export function TopNav({ onCreateProject }: TopNavProps) {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link to="/settings" className="flex items-center cursor-pointer">
+                <Link
+                  href="/settings"
+                  className="flex items-center cursor-pointer"
+                >
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <HelpCircle className="mr-2 h-4 w-4" />
-                Help
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <MessageSquare className="mr-2 h-4 w-4" />
-                Send Feedback
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="text-destructive focus:text-destructive cursor-pointer"
-                onClick={handleLogout}
+                onClick={() => setShowLogoutDialog(true)}
               >
                 <LogOut className="mr-2 h-4 w-4" />
                 Log out
@@ -116,6 +156,24 @@ export function TopNav({ onCreateProject }: TopNavProps) {
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Logout confirmation dialog */}
+      <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sign out?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to sign out of your account?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout}>
+              Sign out
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </header>
   );
 }

@@ -1,6 +1,8 @@
+"use client";
+
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { MoreVertical, Pencil, Trash2, FileText, Clock } from "lucide-react";
+import Link from "next/link";
+import { MoreVertical, Pencil, Trash2, Clock } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -125,7 +127,7 @@ export function ProjectCard({ project, layout, onRename, onDelete }: ProjectCard
   if (layout === "list") {
     return (
       <>
-        <Link to={`/project/${project.id}`}>
+        <Link href={`/project/${project.id}`}>
           <motion.div
             whileHover={{ y: -2, scale: 1.005 }}
             whileTap={{ scale: 0.995 }}
@@ -156,7 +158,7 @@ export function ProjectCard({ project, layout, onRename, onDelete }: ProjectCard
 
   return (
     <>
-      <Link to={`/project/${project.id}`}>
+      <Link href={`/project/${project.id}`}>
         <motion.div
           whileHover={{ y: -4, scale: 1.01 }}
           whileTap={{ scale: 0.98 }}

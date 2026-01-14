@@ -1,4 +1,6 @@
-import { Link } from "react-router-dom";
+"use client";
+
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Home, ArrowLeft } from "lucide-react";
 
@@ -18,7 +20,7 @@ const NotFound = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Go Back
           </Button>
-          <Link to="/dashboard">
+          <Link href="/dashboard">
             <Button>
               <Home className="h-4 w-4 mr-2" />
               Dashboard
