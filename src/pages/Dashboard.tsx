@@ -52,7 +52,6 @@ export default function Dashboard() {
       icon: nb.icon || '📝',
       lastUpdated: formatRelativeTime(new Date(nb.updated_at)),
       sourcesCount: nb.sources?.[0]?.count || 0,
-      createdAt: new Date(nb.created_at),
     }));
   }, [notebooks]);
 
@@ -61,9 +60,8 @@ export default function Dashboard() {
       project.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    if (sortOption === "date") {
-      result = [...result].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-    } else {
+    // Sort by title if selected, otherwise keep API order (already sorted by updated_at desc)
+    if (sortOption === "title") {
       result = [...result].sort((a, b) => a.title.localeCompare(b.title));
     }
 
@@ -138,7 +136,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
       <TopNav />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 min-h-[calc(100vh-56px)] flex flex-col">
         {isLoading ? (
           <div className="space-y-6">
             <div className="flex items-center gap-3">
@@ -156,7 +154,7 @@ export default function Dashboard() {
         ) : isEmpty ? (
           <EmptyState onCreateProject={handleCreateProject} />
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-6 flex-1 flex flex-col">
             {/* Search + Sort + Layout toggle row */}
             <FadeIn>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
@@ -186,17 +184,20 @@ export default function Dashboard() {
 
             {/* Projects Grid/List */}
             {filteredAndSortedProjects.length === 0 ? (
-              <div className="text-center py-16">
+              <div className="text-center py-16 flex-1">
                 <p className="text-muted-foreground">
                   No notebooks found matching "{searchQuery}"
                 </p>
               </div>
             ) : (
-              <>
+              <div className="flex-1 flex flex-col">
                 {layout === "grid" ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  <div 
+                    key={`grid-${sortOption}-${currentPage}`}
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+                  >
                     {paginatedProjects.map((project, index) => (
-                      <FadeIn key={project.id} delay={index * 0.05}>
+                      <FadeIn key={`${project.id}-${sortOption}`} delay={index * 0.05}>
                         <ProjectCard
                           project={project}
                           layout="grid"
@@ -207,9 +208,9 @@ export default function Dashboard() {
                     ))}
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div key={`list-${sortOption}-${currentPage}`} className="space-y-2">
                     {paginatedProjects.map((project, index) => (
-                      <FadeIn key={project.id} delay={index * 0.03}>
+                      <FadeIn key={`${project.id}-${sortOption}`} delay={index * 0.03}>
                         <ProjectCard
                           project={project}
                           layout="list"
@@ -220,6 +221,9 @@ export default function Dashboard() {
                     ))}
                   </div>
                 )}
+
+                {/* Spacer to push pagination to bottom */}
+                <div className="flex-1" />
 
                 {/* Pagination */}
                 {totalPages > 1 && (
@@ -286,7 +290,7 @@ export default function Dashboard() {
                     </Pagination>
                   </FadeIn>
                 )}
-              </>
+              </div>
             )}
           </div>
         )}
