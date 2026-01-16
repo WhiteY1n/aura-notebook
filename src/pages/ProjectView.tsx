@@ -10,8 +10,9 @@ import {
 } from "lucide-react";
 import { SourcePanel, Source } from "@/components/viewer/SourcePanel";
 import { SourceSheet } from "@/components/viewer/SourceSheet";
+import { MobileTabs } from "@/components/viewer/MobileTabs";
 import { ChatPanel, Message } from "@/components/viewer/ChatPanel";
-import { StudioPanel, StudioSheet } from "@/components/project/StudioPanel";
+import { StudioPanel, StudioSheet, StudioContent } from "@/components/project/StudioPanel";
 import { GeneratedItem } from "@/components/project/StudioListItem";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -81,6 +82,7 @@ export default function ProjectView() {
     new Set()
   );
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [mobileActiveTab, setMobileActiveTab] = useState<"sources" | "chat" | "studio">("chat");
   const project = notebooks?.find((nb) => nb.id === id);
   const isLoading = notebooksLoading || sourcesLoading;
   const pageTitle = useMemo(() => {
@@ -98,6 +100,7 @@ export default function ProjectView() {
     source_type: string;
     chunk_lines_from?: number;
     chunk_lines_to?: number;
+    clickedAt?: number; // Timestamp to force re-trigger on mobile
   } | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
@@ -287,6 +290,7 @@ export default function ProjectView() {
         source_type: citation.source_type || source.type,
         chunk_lines_from: citation.chunk_lines_from,
         chunk_lines_to: citation.chunk_lines_to,
+        clickedAt: Date.now(), // Force re-trigger on mobile
       });
     }
   };
@@ -408,10 +412,10 @@ export default function ProjectView() {
         </div>
       </header>
 
-      {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Sources Panel (Left) - hidden on mobile */}
-        <div className="hidden lg:flex h-full">
+      {/* Main Content - Desktop */}
+      <div className="flex-1 hidden lg:flex overflow-hidden">
+        {/* Sources Panel (Left) */}
+        <div className="flex h-full">
           <SourcePanel
             sources={sources}
             onRemoveSource={handleRemoveSource}
@@ -500,9 +504,11 @@ export default function ProjectView() {
           onAddNote={() => {}}
           onCitationClick={handleCitationClick}
         />
+      </div>
 
-        {/* Mobile Sheets */}
-        <SourceSheet
+      {/* Main Content - Mobile (Tabs) */}
+      <div className="flex-1 flex flex-col lg:hidden overflow-hidden">
+        <MobileTabs
           sources={sources}
           onRemoveSource={handleRemoveSource}
           onSelectSource={handleSelectSource}
@@ -510,13 +516,73 @@ export default function ProjectView() {
           projectId={id || ""}
           onSourceAdded={handleSourceAdded}
           highlightedCitation={highlightedCitation}
-        />
-        {/* Studio Sheet (Mobile) */}
-        <StudioSheet
-          projectId={id || ""}
-          notebookId={id || ""}
-          onAddNote={() => {}}
-          onCitationClick={handleCitationClick}
+          activeTab={mobileActiveTab}
+          onTabChange={setMobileActiveTab}
+          chatContent={
+            !isLoading && !hasSources ? (
+              <div className="flex flex-col h-full">
+                <div className="flex-1 flex items-center justify-center p-8">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="flex flex-col items-center text-center max-w-md"
+                  >
+                    <div className="p-6 rounded-full bg-primary/10 mb-6">
+                      <CloudUpload className="h-12 w-12 text-primary" />
+                    </div>
+                    <h2 className="text-2xl font-semibold text-foreground mb-2">
+                      Add a source to get started
+                    </h2>
+                    <p className="text-muted-foreground mb-8">
+                      Upload PDFs, add links, or paste content to begin
+                    </p>
+                    <Button
+                      size="lg"
+                      onClick={() => setAddDialogOpen(true)}
+                      className="gap-2"
+                    >
+                      <CloudUpload className="h-5 w-5" />
+                      Upload a source
+                    </Button>
+                  </motion.div>
+                </div>
+              </div>
+            ) : (
+              <ChatPanel
+                messages={messages}
+                isTyping={isSending}
+                onSendMessage={handleSendMessage}
+                exampleQuestions={
+                  project?.example_questions?.filter(
+                    (q) => !clickedQuestions.has(q)
+                  ) || []
+                }
+                onClearChat={handleClearChat}
+                isDeletingChatHistory={isDeletingChatHistory}
+                onCitationClick={handleCitationClick}
+                onQuestionClick={handleQuestionClick}
+                notebookId={id}
+                notebook={{
+                  title: project?.title,
+                  description: project?.description,
+                  icon: project?.icon,
+                  generation_status: project?.generation_status,
+                }}
+                sourceCount={sources.length}
+                pendingUserMessage={pendingUserMessage}
+                showAiLoading={showAiLoading}
+              />
+            )
+          }
+          studioContent={
+            <StudioContent
+              projectId={id || ""}
+              notebookId={id || ""}
+              onAddNote={() => {}}
+              onCitationClick={handleCitationClick}
+            />
+          }
         />
       </div>
 

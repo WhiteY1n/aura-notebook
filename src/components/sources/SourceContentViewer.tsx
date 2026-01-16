@@ -180,27 +180,31 @@ export function SourceContentViewer({
               const lineNumber = idx + 1; // Lines are 1-indexed
               const isHighlighted = startLine > 0 && lineNumber >= startLine && lineNumber <= endLine;
               const isFirstHighlightedLine = isHighlighted && lineNumber === startLine;
+              const isLastHighlightedLine = isHighlighted && lineNumber === endLine;
               const prevHighlighted =
                 startLine > 0 && lineNumber - 1 >= startLine && lineNumber - 1 <= endLine;
               const shouldAddGapAbove = idx !== 0 && !(isHighlighted && prevHighlighted);
               const topGapClass = shouldAddGapAbove ? "mt-1" : "";
-              const highlightRadiusClass = isHighlighted
-                ? lineNumber === startLine
-                  ? "rounded-t"
-                  : lineNumber === endLine
-                    ? "rounded-b"
-                    : ""
-                : "rounded";
+              
+              // Build border classes for highlighted block
+              let highlightClasses = "";
+              if (isHighlighted) {
+                highlightClasses = "bg-primary/20 dark:bg-primary/30 border-x border-primary";
+                if (isFirstHighlightedLine) {
+                  highlightClasses += " border-t rounded-t";
+                }
+                if (isLastHighlightedLine) {
+                  highlightClasses += " border-b rounded-b";
+                }
+              } else {
+                highlightClasses = "border border-transparent rounded hover:bg-muted/50";
+              }
               
               return (
                 <div
                   key={idx}
                   ref={isFirstHighlightedLine ? highlightRef : null}
-                  className={`py-1 px-2 text-sm whitespace-pre-wrap break-words ${topGapClass} ${highlightRadiusClass} ${
-                    isHighlighted 
-                      ? 'border border-primary bg-primary/20 dark:bg-primary/30'
-                      : 'border border-transparent hover:bg-muted/50'
-                  }`}
+                  className={`py-1 px-2 text-sm whitespace-pre-wrap break-words ${topGapClass} ${highlightClasses}`}
                 >
                   <span className={isHighlighted ? 'font-medium text-foreground' : 'text-foreground'}>
                     {line || '\u00A0'}

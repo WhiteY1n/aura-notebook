@@ -40,7 +40,7 @@ interface StudioPanelProps {
 }
 
 // Desktop panel content
-function StudioContent({ projectId, notebookId, onAddNote, onCitationClick }: StudioPanelProps) {
+export function StudioContent({ projectId, notebookId, onAddNote, onCitationClick }: StudioPanelProps) {
   const { notes, deleteNote } = useNotes(notebookId);
   const { notebooks } = useNotebooks();
   const { sources } = useSources(notebookId);
